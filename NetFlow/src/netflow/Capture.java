@@ -23,7 +23,15 @@ public class Capture extends Thread
         try
         {
             DatagramSocket serverSocket = new DatagramSocket(RECEIVE_PORT);
-            byte[] receiveData = new byte[48]; //48 for NetFlow V5
+            byte[] receiveData = new byte[1584];
+            /*
+             * V1 max size = 17 + 24 * 49 = 1193
+             * V5 max size = 24 + 30 * 48 = 1464
+             * V6 max size = 24 + 30 * 52 = 1584
+             * V7 max size = 24 + 30 * 52 = 1584
+             * V8 max size = ???
+             * V9 max size = ???
+             */
             
             while (true)
             {

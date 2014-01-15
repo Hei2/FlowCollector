@@ -41,6 +41,7 @@ public class PacketCapture extends Thread
             DataInputStream in = new DataInputStream(byteIn);
 
             short version = in.readShort();
+            
             if (version == 9)
             {
                 short count = in.readShort();
