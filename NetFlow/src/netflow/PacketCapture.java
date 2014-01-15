@@ -3,6 +3,10 @@ package netflow;
 import java.net.DatagramPacket;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.IOException;
+
+//NetFlow v9 RFC: http://www.ietf.org/rfc/rfc3954.txt
+//Easier read for v9: http://netflow.caligare.com/netflow_v9.htm
 
 /**
  *
@@ -25,16 +29,29 @@ public class PacketCapture extends Thread
         SavePacket(receivedPacket);
     }
     
-    //Assumes the packet is NetFlow v5
+    /*
+     * First reads the version of the NetFlow packet. Accordingly grabs the 
+     * rest of the packet information deemed relevant.
+     */
     private void SavePacket(DatagramPacket receivedPacket)
     {
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
-        DataInputStream in = new DataInputStream(byteIn);
-
-        /*String input = "";
-        while( (input = in.readLine()) != null)
+        try
         {
-            System.out.println(input + "\n");
-        }*/
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
+            DataInputStream in = new DataInputStream(byteIn);
+
+            short version = in.readShort();
+            if (version == 9)
+            {
+                short count = in.readShort();
+                in.skipBytes(4);
+                int unix_secs = in.readInt();
+                //in.skipBytes();
+            }
+        }
+        catch (IOException ex)
+        {
+            System.out.println(ex.getMessage());
+        }
     }
 }
