@@ -2,6 +2,7 @@ package netflow;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.Scanner;
 
 /**
  *
@@ -9,7 +10,7 @@ import java.net.DatagramSocket;
  */
 public class Capture extends Thread
 {
-    final int RECEIVE_PORT = 2055; //2055 as default for receiving NetFlow data.
+    int RECEIVE_PORT;//2055 as default for receiving NetFlow data.
     
     @Override
     public void run()
@@ -19,6 +20,11 @@ public class Capture extends Thread
     
     private void CapturePackets()
     {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter the port number to listen on (Incorrect ports will CRASH): ");
+        RECEIVE_PORT = scanner.nextInt();
+        scanner.close();
+        
         System.out.println("Capturing packets on port: " + RECEIVE_PORT);
         try
         {
