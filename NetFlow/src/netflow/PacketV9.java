@@ -1,10 +1,18 @@
 package netflow;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+
+//NetFlow v9 RFC: http://www.ietf.org/rfc/rfc3954.txt
+//Easier read for v9: http://netflow.caligare.com/netflow_v9.htm
+
 /**
  *
  * @author Keenan
  */
-public class PacketV9
+public class PacketV9 extends Thread
 {
     /*enum FieldTypes {
         IN_BYTES, IN_PKTS, FLOWS, PROTOCOL, SRC_TOS, TCP_FLAGS, L4_SRC_PORT,
@@ -34,4 +42,52 @@ public class PacketV9
      * 
      * !IMPORTANT! Templates will need to be saved to the database.
      */
+    
+    DatagramPacket receivedPacket;
+            
+    public PacketV9(DatagramPacket received)
+    {
+        receivedPacket = received;
+    }
+    
+    @Override
+    public void run()
+    {
+        //Do we need to recreate the DatagramPacket just to be sure this
+        //packet is not the same object used by other threads?
+        SavePacket(receivedPacket);
+    }
+    
+    private void SavePacket(DatagramPacket receivedPacket)
+    {
+        try
+        {
+            ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
+            DataInputStream in = new DataInputStream(byteIn);
+
+            try
+            {
+                //short version = in.readShort();
+                in.skipBytes(2); //Skip version
+                short count = in.readShort();
+                int sys_uptime = in.readInt();
+                int unix_secs = in.readInt();
+                int package_sequence = in.readInt();
+                int source_id = in.readInt();
+
+                for (int i = 0; i < count; i++)
+                {
+
+                }
+            }
+            finally
+            {
+                in.close();
+            }
+        }
+        catch (IOException ex)
+        {
+            System.out.println(ex.getMessage());
+        }
+    }
 }
