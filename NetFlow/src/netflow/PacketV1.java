@@ -37,48 +37,33 @@ public class PacketV1 extends Thread
      */
     private void SavePacket(DatagramPacket receivedPacket)
     {
-        try
+        //Offset of 2 since version is being skipped.
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength()); DataInputStream in = new DataInputStream(byteIn);)
         {
-            //!!CONSIDER OFFSET OF 2 SINCE VERSION IS CURRENTLY BEING SKIPPED!!
-            ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
-            DataInputStream in = new DataInputStream(byteIn);
+            short count = in.readShort();
+            int sys_uptime = in.readInt();
+            int unix_secs = in.readInt();
+            int unix_nsecs = in.readInt();
+            in.skipBytes(1); //Skip unix_nsecs last bit (assumes only the first 4 are used)
 
-            try
+            for (int i = 0; i < count; i++)
             {
-                //short version = in.readShort();
-                in.skipBytes(2); //Skip version
-                short count = in.readShort();
-                int sys_uptime = in.readInt();
-                int unix_secs = in.readInt();
-
-                /*
-                 * !!ADDRESS THIS!!
-                 */
-                in.skipBytes(5); //Skip unix_nsecs
-
-                for (int i = 0; i < count; i++)
-                {
-                    int srcaddr = in.readInt();
-                    int dstaddr = in.readInt();
-                    int nexthop = in.readInt();
-                    short input = in.readShort();
-                    short output = in.readShort();
-                    int dPkts = in.readInt();
-                    int dOctets = in.readInt();
-                    int first = in.readInt();
-                    int last = in.readInt();
-                    short srcport = in.readShort();
-                    short dstport = in.readShort();
-                    in.skipBytes(2); //Ignoring pad1
-                    byte prot = in.readByte();
-                    byte tos = in.readByte();
-                    byte flags = in.readByte();
-                    in.skipBytes(8); //Ignoring pad2
-                }
-            }
-            finally
-            {
-                in.close();
+                int srcaddr = in.readInt();
+                int dstaddr = in.readInt();
+                int nexthop = in.readInt();
+                short input = in.readShort();
+                short output = in.readShort();
+                int dPkts = in.readInt();
+                int dOctets = in.readInt();
+                int first = in.readInt();
+                int last = in.readInt();
+                short srcport = in.readShort();
+                short dstport = in.readShort();
+                in.skipBytes(2); //Ignoring pad1
+                byte prot = in.readByte();
+                byte tos = in.readByte();
+                byte flags = in.readByte();
+                in.skipBytes(8); //Ignoring pad2
             }
         }
         catch (IOException ex)

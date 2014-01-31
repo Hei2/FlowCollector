@@ -60,29 +60,17 @@ public class PacketV9 extends Thread
     
     private void SavePacket(DatagramPacket receivedPacket)
     {
-        try
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength()); DataInputStream in = new DataInputStream(byteIn);)
         {
-            ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
-            DataInputStream in = new DataInputStream(byteIn);
+            short count = in.readShort();
+            int sys_uptime = in.readInt();
+            int unix_secs = in.readInt();
+            int package_sequence = in.readInt();
+            int source_id = in.readInt();
 
-            try
+            for (int i = 0; i < count; i++)
             {
-                //short version = in.readShort();
-                in.skipBytes(2); //Skip version
-                short count = in.readShort();
-                int sys_uptime = in.readInt();
-                int unix_secs = in.readInt();
-                int package_sequence = in.readInt();
-                int source_id = in.readInt();
 
-                for (int i = 0; i < count; i++)
-                {
-
-                }
-            }
-            finally
-            {
-                in.close();
             }
         }
         catch (IOException ex)

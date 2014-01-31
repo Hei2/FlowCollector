@@ -37,34 +37,22 @@ public class PacketV8 extends Thread
      */
     private void SavePacket(DatagramPacket receivedPacket)
     {
-        try
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength()); DataInputStream in = new DataInputStream(byteIn);)
         {
-            ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 0, receivedPacket.getLength());
-            DataInputStream in = new DataInputStream(byteIn);
+            short count = in.readShort();
+            int sys_uptime = in.readInt();
+            int unix_secs = in.readInt();
+            int unix_nsecs = in.readInt();
+            int flow_sequence = in.readInt();
+            byte engine_type = in.readByte();
+            byte engine_id = in.readByte();
+            byte aggregation = in.readByte();
+            byte agg_version = in.readByte();
+            in.skipBytes(4); //Ignoring reserved
 
-            try
+            for (int i = 0; i < count; i++)
             {
-                //short version = in.readShort();
-                in.skipBytes(2); //Skip version
-                short count = in.readShort();
-                int sys_uptime = in.readInt();
-                int unix_secs = in.readInt();
-                int unix_nsecs = in.readInt();
-                int flow_sequence = in.readInt();
-                byte engine_type = in.readByte();
-                byte engine_id = in.readByte();
-                byte aggregation = in.readByte();
-                byte agg_version = in.readByte();
-                in.skipBytes(4); //Ignoring reserved
 
-                for (int i = 0; i < count; i++)
-                {
-
-                }
-            }
-            finally
-            {
-                in.close();
             }
         }
         catch (IOException ex)
