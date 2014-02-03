@@ -1,0 +1,9 @@
+#The format for this file should be "FIELD=<Value>"
+#Do NOT modify spacing unless it is included in the field
+#URL = The IP address of the database followed by the port number
+#USER = The username for connecting to the database
+#PASS = The password associated with USER.
+
+URL=127.0.0.1:3306
+USER=user
+PASS=pass
