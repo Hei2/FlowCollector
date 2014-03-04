@@ -4,6 +4,11 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 //NetFlow v9 RFC: http://www.ietf.org/rfc/rfc3954.txt
 //Easier read for v9: http://netflow.caligare.com/netflow_v9.htm
@@ -58,24 +63,64 @@ public class PacketV9 extends Thread
         SavePacket(receivedPacket);
     }
     
+    /*
+     * Grabs all of the packet information and stores it in the database.
+     */
     private void SavePacket(DatagramPacket receivedPacket)
     {
-        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength()); DataInputStream in = new DataInputStream(byteIn);)
+        //Offset of 2 since version is being skipped.
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength());
+                DataInputStream in = new DataInputStream(byteIn);)
         {
-            short count = in.readShort();
-            int sys_uptime = in.readInt();
-            int unix_secs = in.readInt();
-            int package_sequence = in.readInt();
-            int source_id = in.readInt();
-
-            for (int i = 0; i < count; i++)
+            Class.forName("com.mysql.jdbc.Driver");
+            
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://" + Main.GetUrl(), Main.GetUser(), Main.GetPass());
+                Statement stmt = conn.createStatement();)
             {
+                short count = in.readShort();
+                int sys_uptime = in.readInt();
+                int unix_secs = in.readInt();
+                int package_sequence = in.readInt();
+                int source_id = in.readInt();
+                
+                String insert = "INSERT INTO PACKET_V9_HEADER (count, sys_uptime, unix_secs, package_sequence, source_id) " +
+                        "VALUES (" + count + ", " + sys_uptime + ", " + unix_secs + ", " + package_sequence + ", " + source_id + ")";
+                
+                stmt.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
+                ResultSet rs = stmt.getGeneratedKeys();
+                
+                if (rs != null && rs.next())
+                {
+                    long header_id = rs.getLong(1);
 
+                    //Store the rest of the packet as a BLOB and allow it to be
+                    //parsed later.
+                    byte[] packet = new byte[in.available()];
+                    in.readFully(packet);
+                    insert = "INSERT INTO PACKET_V9 (header_id, packet)" +
+                            "VALUES (" + header_id + ", " + packet + ")";
+                    stmt.executeUpdate(insert);
+                }
+                else
+                {
+                    System.out.println("Error: Unable to determine id of PACKET_V9_HEADER; associated flows dropped.");
+                }
+            }
+            catch (SQLException ex)
+            {
+                System.out.println(ex.getMessage());
+                System.out.println("Error: An SQLException occurred in PacketV9.\n");
             }
         }
         catch (IOException ex)
         {
             System.out.println(ex.getMessage());
+            System.out.println("Error: An IOException occurred in PacketV9.\n");
+        }
+        catch (ClassNotFoundException ex)
+        {
+            System.out.println(ex.getMessage());
+            System.out.println("Error: A ClassNotFoundException occurred in PacketV9.\n");
         }
     }
 }

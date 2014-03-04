@@ -4,6 +4,6 @@
 #USER = The username for connecting to the database
 #PASS = The password associated with USER.
 
-URL=127.0.0.1:3306
+URL=url:3306
 USER=user
 PASS=pass

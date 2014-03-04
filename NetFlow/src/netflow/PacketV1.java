@@ -38,7 +38,7 @@ public class PacketV1 extends Thread
     }
     
     /*
-     * Grabs and saves all of the packet information.
+     * Grabs all of the packet information and stores it in the database.
      */
     private void SavePacket(DatagramPacket receivedPacket)
     {
@@ -65,7 +65,7 @@ public class PacketV1 extends Thread
                 
                 if (rs != null && rs.next())
                 {
-                    int header_id = rs.getInt(1);
+                    long header_id = rs.getLong(1);
                     
                     for (int i = 0; i < count; i++)
                     {

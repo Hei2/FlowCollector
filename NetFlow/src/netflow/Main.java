@@ -38,8 +38,7 @@ public class Main
         scanner.close();
         System.out.println("\nThe name associated with that IP is:\n" + Functions.getHostName(ip) + "\n");*/
         
-        //Get the url, user, and password from the user.
-        //Consider reading a configuration file.
+        //Get the url, user, and password from the config file.
         File config = new File("config.txt");
         
         try (Scanner scanner = new Scanner(config);)
@@ -49,7 +48,7 @@ public class Main
                 String line = scanner.nextLine();
                 if (line.startsWith("URL="))
                 {
-                    url = line.substring(4);
+                    url = line.substring(4).concat("/flowcollectordb");
                 }
                 else if (line.startsWith("USER="))
                 {
@@ -88,7 +87,7 @@ public class Main
             Statement stmt = conn.createStatement();
 
             //Begin creating tables.
-            String create = "CREATE TABLE IF NOT EXISTS PACKET_V1_HEADER (id INT NOT NULL AUTO_INCREMENT, " +
+            String create = "CREATE TABLE IF NOT EXISTS PACKET_V1_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -96,8 +95,8 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V1 (id INT NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V1 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
                             "srcaddr INT NOT NULL, " +
                             "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
@@ -116,7 +115,7 @@ public class Main
                             "FOREIGN KEY(header_id) REFERENCES PACKET_V1_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V5_HEADER (id INT NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V5_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -128,8 +127,8 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V5 (id INT NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V5 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
                             "srcaddr INT NOT NULL, " +
                             "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
@@ -152,7 +151,7 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V5_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V6_HEADER (id INT NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V6_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -164,8 +163,8 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V6 (id INT NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V6 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
                             "srcaddr INT NOT NULL, " +
                             "dstaddr INT NOT NULL," +
                             "nexthop INT NOT NULL, " +
@@ -188,7 +187,7 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V6_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V7_HEADER (id INT NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V7_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -197,8 +196,8 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V7 (id INT NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V7 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
                             "srcaddr INT NOT NULL, " +
                             "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
@@ -223,17 +222,41 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V7_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            /*create = "";
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V8_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "count SMALLINT NOT NULL, " +
+                            "sys_uptime INT NOT NULL, " +
+                            "unix_secs INT NOT NULL, " +
+                            "unix_nsecs INT NOT NULL, " +
+                            "flow_sequence INT NOT NULL, " +
+                            "engine_type TINYINT NOT NULL, " +
+                            "engine_id TINYINT NOT NULL, " +
+                            "aggregation TINYINT NOT NULL, " +
+                            "agg_version TINYINT NOT NULL, " +
+                            "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "";
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V8 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
+                            "packet BLOB, " +
+                            "PRIMARY KEY (id), " +
+                            "FOREIGN KEY (header_id) REFERENCES PACKET_V8_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "";
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V9_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "count SMALLINT NOT NULL, " +
+                            "sys_uptime INT NOT NULL, " +
+                            "unix_secs INT NOT NULL, " +
+                            "package_sequence INT NOT NULL, " +
+                            "source_id INT NOT NULL, " +
+                            "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "";
-            stmt.executeUpdate(create);*/
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V9 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id INT UNSIGNED NOT NULL, " +
+                            "packet BLOB, " +
+                            "PRIMARY KEY (id), " +
+                            "FOREIGN KEY (header_id) REFERENCES PACKET_V9_HEADER(id) ON DELETE CASCADE)";
+            stmt.executeUpdate(create);
 
             return true;
         }
@@ -245,7 +268,7 @@ public class Main
             }
             else
             {
-                System.out.println("An unhandled error occured with the database\nFailed to connect to database with URL: " + url);
+                System.out.println("An unhandled error occured with the database\nSQL State: " + ex.getSQLState().toString() + "\nFailed to connect to database with URL: " + url);
             }
             
             System.out.println("\nFailed to create the database tables.\nRestart the program.");
