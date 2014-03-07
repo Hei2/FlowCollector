@@ -20,6 +20,11 @@ public class Capture extends Thread
         CapturePackets();
     }
     
+    /**
+     * Determine the version of the packet being received, and then create a
+     * thread for the appropriate packet object to read the packet and store it
+     * into the database.
+     */
     private void CapturePackets()
     {
         Scanner scanner = new Scanner(System.in);

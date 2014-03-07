@@ -73,6 +73,11 @@ public class Main
         }
     }
     
+    /**
+     * This attempts to connect to the database and create the appropriate
+     * tables if they do not exist.
+     * @return Boolean indicating whether or not the database connection could be made
+     */
     private static boolean CreateDatabase()
     {
         try
