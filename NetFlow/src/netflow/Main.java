@@ -92,7 +92,7 @@ public class Main
             Statement stmt = conn.createStatement();
 
             //Begin creating tables.
-            String create = "CREATE TABLE IF NOT EXISTS PACKET_V1_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            String create = "CREATE TABLE IF NOT EXISTS PACKET_V1_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -100,10 +100,10 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V1 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
-                            "srcaddr INT NOT NULL, " +
-                            "dstaddr INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V1 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
+                            "srcaddr INT UNSIGNED NOT NULL, " +
+                            "dstaddr INT UNSIGNED NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -111,8 +111,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT NOT NULL, " +
-                            "dstport SMALLINT NOT NULL, " +
+                            "srcport SMALLINT UNSIGNED NOT NULL, " +
+                            "dstport SMALLINT UNSIGNED NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
                             "flags TINYINT NOT NULL, " +
@@ -120,7 +120,7 @@ public class Main
                             "FOREIGN KEY(header_id) REFERENCES PACKET_V1_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V5_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V5_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -132,10 +132,10 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V5 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
-                            "srcaddr INT NOT NULL, " +
-                            "dstaddr INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V5 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
+                            "srcaddr INT UNSIGNED NOT NULL, " +
+                            "dstaddr INT UNSIGNED NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -143,8 +143,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT NOT NULL, " +
-                            "dstport SMALLINT NOT NULL, " +
+                            "srcport SMALLINT UNSIGNED NOT NULL, " +
+                            "dstport SMALLINT UNSIGNED NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
@@ -156,7 +156,7 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V5_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V6_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V6_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -168,10 +168,10 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V6 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
-                            "srcaddr INT NOT NULL, " +
-                            "dstaddr INT NOT NULL," +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V6 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
+                            "srcaddr INT UNSIGNED NOT NULL, " +
+                            "dstaddr INT UNSIGNED NOT NULL," +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -179,8 +179,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT NOT NULL," +
-                            "dstport SMALLINT NOT NULL, " +
+                            "srcport SMALLINT UNSIGNED NOT NULL," +
+                            "dstport SMALLINT UNSIGNED NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
@@ -192,7 +192,7 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V6_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V7_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V7_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -201,10 +201,10 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V7 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
-                            "srcaddr INT NOT NULL, " +
-                            "dstaddr INT NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V7 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
+                            "srcaddr INT UNSIGNED NOT NULL, " +
+                            "dstaddr INT UNSIGNED NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -212,8 +212,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT NOT NULL, " +
-                            "dstport SMALLINT NOT NULL, " +
+                            "srcport SMALLINT UNSIGNED NOT NULL, " +
+                            "dstport SMALLINT UNSIGNED NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
@@ -227,7 +227,7 @@ public class Main
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V7_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V8_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V8_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -240,14 +240,14 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V8 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V8 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
                             "packet BLOB, " +
                             "PRIMARY KEY (id), " +
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V8_HEADER(id) ON DELETE CASCADE)";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V9_HEADER (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V9_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "count SMALLINT NOT NULL, " +
                             "sys_uptime INT NOT NULL, " +
                             "unix_secs INT NOT NULL, " +
@@ -256,8 +256,8 @@ public class Main
                             "PRIMARY KEY (id))";
             stmt.executeUpdate(create);
 
-            create = "CREATE TABLE IF NOT EXISTS PACKET_V9 (id INT UNSIGNED NOT NULL AUTO_INCREMENT, " +
-                            "header_id INT UNSIGNED NOT NULL, " +
+            create = "CREATE TABLE IF NOT EXISTS PACKET_V9 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
+                            "header_id BIGINT UNSIGNED NOT NULL, " +
                             "packet BLOB, " +
                             "PRIMARY KEY (id), " +
                             "FOREIGN KEY (header_id) REFERENCES PACKET_V9_HEADER(id) ON DELETE CASCADE)";

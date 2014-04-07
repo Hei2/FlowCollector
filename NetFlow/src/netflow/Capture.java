@@ -95,7 +95,7 @@ public class Capture extends Thread
                     System.out.println("Received an unexpected packet version: " + version);
                 }
                 
-                System.out.println("Received packet");
+                System.out.println("Received packet: Version " + version);
             }
         }
         catch (Exception ex)

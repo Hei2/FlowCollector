@@ -96,7 +96,7 @@ public class PacketV5 extends Thread
                         insert = "INSERT INTO PACKET_V5 (header_id, srcaddr, dstaddr, nexthop, input, output, dPkts, dOctets, first, last, srcport, dstport, tcp_flags, prot, tos, src_as, dst_as, src_mask, dst_mask) " +
                                 "VALUES (" + header_id + ", " + srcaddr + ", " + dstaddr + ", " + nexthop + ", " + input + ", " + output + ", " + dPkts + ", " + dOctets +
                                 ", " + first + ", " + last + ", " + srcport + ", " + dstport + ", " + tcp_flags + ", " + prot + ", " + tos + ", " + src_as + ", " + dst_as +
-                                src_mask + ", " + dst_mask + ")";
+                                ", " + src_mask + ", " + dst_mask + ")";
                         stmt.executeUpdate(insert);
                     }
                 }
