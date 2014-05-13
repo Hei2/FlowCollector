@@ -102,8 +102,8 @@ public class Main
 
             create = "CREATE TABLE IF NOT EXISTS PACKET_V1 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "header_id BIGINT UNSIGNED NOT NULL, " +
-                            "srcaddr INT UNSIGNED NOT NULL, " +
-                            "dstaddr INT UNSIGNED NOT NULL, " +
+                            "srcaddr INT NOT NULL, " +
+                            "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -111,8 +111,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT UNSIGNED NOT NULL, " +
-                            "dstport SMALLINT UNSIGNED NOT NULL, " +
+                            "srcport SMALLINT NOT NULL, " +
+                            "dstport SMALLINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
                             "flags TINYINT NOT NULL, " +
@@ -134,8 +134,8 @@ public class Main
 
             create = "CREATE TABLE IF NOT EXISTS PACKET_V5 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "header_id BIGINT UNSIGNED NOT NULL, " +
-                            "srcaddr INT UNSIGNED NOT NULL, " +
-                            "dstaddr INT UNSIGNED NOT NULL, " +
+                            "srcaddr INT NOT NULL, " +
+                            "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -143,8 +143,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT UNSIGNED NOT NULL, " +
-                            "dstport SMALLINT UNSIGNED NOT NULL, " +
+                            "srcport SMALLINT NOT NULL, " +
+                            "dstport SMALLINT NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
@@ -170,8 +170,8 @@ public class Main
 
             create = "CREATE TABLE IF NOT EXISTS PACKET_V6 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "header_id BIGINT UNSIGNED NOT NULL, " +
-                            "srcaddr INT UNSIGNED NOT NULL, " +
-                            "dstaddr INT UNSIGNED NOT NULL," +
+                            "srcaddr INT NOT NULL, " +
+                            "dstaddr INT NOT NULL," +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -179,8 +179,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT UNSIGNED NOT NULL," +
-                            "dstport SMALLINT UNSIGNED NOT NULL, " +
+                            "srcport SMALLINT NOT NULL," +
+                            "dstport SMALLINT NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
@@ -203,8 +203,8 @@ public class Main
 
             create = "CREATE TABLE IF NOT EXISTS PACKET_V7 (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, " +
                             "header_id BIGINT UNSIGNED NOT NULL, " +
-                            "srcaddr INT UNSIGNED NOT NULL, " +
-                            "dstaddr INT UNSIGNED NOT NULL, " +
+                            "srcaddr INT NOT NULL, " +
+                            "dstaddr INT NOT NULL, " +
                             "nexthop INT NOT NULL, " +
                             "input SMALLINT NOT NULL, " +
                             "output SMALLINT NOT NULL, " +
@@ -212,8 +212,8 @@ public class Main
                             "dOctets INT NOT NULL, " +
                             "first INT NOT NULL, " +
                             "last INT NOT NULL, " +
-                            "srcport SMALLINT UNSIGNED NOT NULL, " +
-                            "dstport SMALLINT UNSIGNED NOT NULL, " +
+                            "srcport SMALLINT NOT NULL, " +
+                            "dstport SMALLINT NOT NULL, " +
                             "tcp_flags TINYINT NOT NULL, " +
                             "prot TINYINT NOT NULL, " +
                             "tos TINYINT NOT NULL, " +
