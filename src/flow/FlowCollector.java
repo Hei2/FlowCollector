@@ -123,7 +123,6 @@ public class FlowCollector
 
             ResultSet rs = stmt.executeQuery("SELECT VERSION()");
             rs.first();
-	    System.out.println(rs.getString(1));
 	    String [] sql_v = rs.getString(1).split("\\.",0);
             double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
 	    
