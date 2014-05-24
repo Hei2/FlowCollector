@@ -1,0 +1,5 @@
+#!/bin/bash
+
+path=$PWD
+javac -classpath $path/org.xbill.dns_2.1.6.jar -sourcepath $path/src/ -d $path/build/classes/ $path/src/flow/FlowCollector.java
+java -cp $path/libraries/mysql-connector-java-5.1.28/mysql-connector-java-5.1.28-bin.jar:$path/org.xbill.dns_2.1.6.jar:$path/build/classes flow.FlowCollector $1
