@@ -293,8 +293,8 @@ public class FlowCollector
 
             create = "CREATE TABLE IF NOT EXISTS FLOWS ( FlowID SERIAL, "
                     + "ProtocolNumber TINYINT UNSIGNED, "
-                    + "SourceAddress VARCHAR(35) NOT NULL, "
-                    + "DestinationAddress VARCHAR(35) NOT NULL, "
+                    + "SourceAddress VARBINARY(16) NOT NULL, "
+                    + "DestinationAddress VARBINARY(16) NOT NULL, "
                     + "SourcePort SMALLINT UNSIGNED, "
                     + "DestinationPort SMALLINT UNSIGNED,  "
                     + "DateTimeInitiated DATETIME NOT NULL, "
@@ -303,7 +303,7 @@ public class FlowCollector
             stmt.addBatch(create);
 
              //Create the table.
-            create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARCHAR(35) NOT NULL, "
+            create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARBINARY(16) NOT NULL, "
                     + "hostname TEXT, "
                     + "timestamp DATETIME NOT NULL, "
                     + "PRIMARY KEY (ip))";

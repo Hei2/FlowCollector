@@ -151,7 +151,7 @@ public class Agent {
         DecimalFormat kilobyte_format = new DecimalFormat("0.###");        
         for (Flow f : flows) {
             stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
-                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %.3f )",
+                    + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %.3f )",
                     f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", f.getKilobytesTransferred()
                     ));
         }

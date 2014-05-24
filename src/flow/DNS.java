@@ -28,7 +28,7 @@ public class DNS{
             Statement stmt = conn.createStatement();
             
             //Retrieve the IP addresses in the Flows table.
-            String retrieve = "SELECT DISTINCT(SourceAddress) FROM FLOWS";
+            String retrieve = "SELECT DISTINCT(INET6_NTOA(SourceAddress)) FROM FLOWS";
             ResultSet rset = stmt.executeQuery(retrieve);
 
             HashSet<String> ipAddresses = new HashSet<>();
@@ -41,7 +41,7 @@ public class DNS{
             }
 
             //Retrieve the IP addresses in the Flows table.
-            retrieve = "SELECT DISTINCT(DestinationAddress) FROM FLOWS";
+            retrieve = "SELECT DISTINCT(INET6_NTOA(DestinationAddress)) FROM FLOWS";
             rset = stmt.executeQuery(retrieve);
 
             while (rset.next()) {
@@ -58,7 +58,7 @@ public class DNS{
             for (String ip : ipAddresses) {
                 String hostname = getHostName(ip);
                 if (!hostname.equals(ip)) {
-                    retrieve = "REPLACE INTO DNS_LOOKUP VALUES ('" + ip + "', '" + hostname + "', " + " NOW()" + ")";
+                    retrieve = "REPLACE INTO DNS_LOOKUP VALUES (INET6_ATON('" + ip + "'), '" + hostname + "', " + " NOW()" + ")";
                     stmt.executeUpdate(retrieve);
                 }
             }
@@ -95,7 +95,7 @@ public class DNS{
             Statement stmt = conn.createStatement();
 
             //Create the table.
-            String create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARCHAR(35) NOT NULL, "
+            String create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARBINARY(16) NOT NULL, "
                     + "hostname TEXT, "
                     + "timestamp DATETIME NOT NULL, "
                     + "PRIMARY KEY (ip))";
