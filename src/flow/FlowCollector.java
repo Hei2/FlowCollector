@@ -80,7 +80,7 @@ public class FlowCollector
             double initialTime = System.currentTimeMillis();
             
             while(true){
-                if(System.currentTimeMillis() - initialTime >= 60000){ // DNS lookup every hour 3600000
+                if(System.currentTimeMillis() - initialTime >= 3600000){ // DNS lookup every hour 3600000
                     try{
                         DNS.performDNSLookup();
                     }catch(Exception e){
