@@ -20,7 +20,7 @@ To run the program, issue the following command in the terminal:
 
 To run the program and specifying the SFlow/ NetFlow port to listen on:
 
-./FlowCollector -s <SflowPort> -n <NetFlowPort>
+./FlowCollector -s [SflowPort] -n [NetFlowPort]
 
 To display the output of the packets
 
