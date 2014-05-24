@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import static netflow.Functions.getHostName;
@@ -81,6 +82,9 @@ public class DNS{
                     stmt.executeUpdate(retrieve);
                 }
             }
+
+            System.out.println("DNS lookups complete");
+            return true;
         } catch (SQLException ex) {
             if (ex.getSQLState().equals("08S01")) {
                 System.out.println("Error: Failed to connect to database with URL: " + DatabaseProperties.getDatabase());
@@ -90,16 +94,12 @@ public class DNS{
             }
 
             System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
-            return false;
         } catch (ClassNotFoundException ex) {
             System.out.println(ex.getMessage());
-            return false;
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-
-        System.out.println("DNS lookups complete");
-        return true;
+        return false;
     }
 
     public static boolean createDNSTable() {
@@ -137,21 +137,24 @@ public class DNS{
     }
 
     public static String getHostName(String hostIp) throws IOException {
-        Record opt = null;
-        Resolver res = new ExtendedResolver();
+	try{
+		Record opt = null;
+		Resolver res = new ExtendedResolver();
 
-        Name name = ReverseMap.fromAddress(hostIp);
-        int type = Type.PTR;
-        int dclass = DClass.IN;
-        Record rec = Record.newRecord(name, type, dclass);
-        Message query = Message.newQuery(rec);
-        Message response = res.send(query);
+		Name name = ReverseMap.fromAddress(hostIp);
+		int type = Type.PTR;
+		int dclass = DClass.IN;
+		Record rec = Record.newRecord(name, type, dclass);
+		Message query = Message.newQuery(rec);
+		Message response = res.send(query);
 
-        Record[] answers = response.getSectionArray(Section.ANSWER);
-        if (answers.length == 0) {
-            return hostIp;
-        } else {
-            return answers[0].rdataToString();
-        }
+		Record[] answers = response.getSectionArray(Section.ANSWER);
+		if (answers.length == 0) {
+		    return hostIp;
+		} else {
+		    return answers[0].rdataToString();
+		}
+	}catch(SocketTimeoutException ste){}
+	return hostIp;
     }
 }
