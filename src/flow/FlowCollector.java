@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.ResultSet;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,6 +94,7 @@ public class FlowCollector
                 System.err.println("Error: Failed to connect to database: " + DatabaseProperties.getDatabase());
             } else {
                 System.err.println("An unhandled error occured with the database\nSQL State: " + ex.getSQLState().toString());
+		ex.printStackTrace();
             }
 
             System.err.println("\nFailed to create the database tables.\nRestart the program.");
@@ -119,6 +121,12 @@ public class FlowCollector
             //Create a statement object to use.
             Statement stmt = conn.createStatement();
 
+            ResultSet rs = stmt.executeQuery("SELECT VERSION()");
+            rs.first();
+	    System.out.println(rs.getString(1));
+	    String [] sql_v = rs.getString(1).split("\\.",0);
+            double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
+	    
             //Begin creating tables.
             String create = "CREATE TABLE IF NOT EXISTS PACKET_V1_HEADER (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, "
                     + "count SMALLINT NOT NULL, "
@@ -290,23 +298,41 @@ public class FlowCollector
                     + "PRIMARY KEY (id), "
                     + "FOREIGN KEY (header_id) REFERENCES PACKET_V9_HEADER(id) ON DELETE CASCADE)";
             stmt.addBatch(create);
+	    
+	    if(mysql_version >= 5.6){
+		    create = "CREATE TABLE IF NOT EXISTS FLOWS ( FlowID SERIAL, "
+		            + "ProtocolNumber TINYINT UNSIGNED, "
+		            + "SourceAddress VARBINARY(16) NOT NULL, "
+		            + "DestinationAddress VARBINARY(16) NOT NULL, "
+		            + "SourcePort SMALLINT UNSIGNED, "
+		            + "DestinationPort SMALLINT UNSIGNED,  "
+		            + "DateTimeInitiated DATETIME NOT NULL, "
+		            + "KiloBytesTransferred DECIMAL(15,3) NOT NULL, "
+		            + "PRIMARY KEY(FlowID))";
+	    } else {
+		    create = "CREATE TABLE IF NOT EXISTS FLOWS ( FlowID SERIAL, "
+		            + "ProtocolNumber TINYINT UNSIGNED, "
+		            + "SourceAddress VARCHAR(35) NOT NULL, "
+		            + "DestinationAddress VARCHAR(35) NOT NULL, "
+		            + "SourcePort SMALLINT UNSIGNED, "
+		            + "DestinationPort SMALLINT UNSIGNED,  "
+		            + "DateTimeInitiated DATETIME NOT NULL, "
+		            + "KiloBytesTransferred DECIMAL(15,3) NOT NULL, "
+		            + "PRIMARY KEY(FlowID))";		   
+	    }
+	    stmt.addBatch(create);
 
-            create = "CREATE TABLE IF NOT EXISTS FLOWS ( FlowID SERIAL, "
-                    + "ProtocolNumber TINYINT UNSIGNED, "
-                    + "SourceAddress VARBINARY(16) NOT NULL, "
-                    + "DestinationAddress VARBINARY(16) NOT NULL, "
-                    + "SourcePort SMALLINT UNSIGNED, "
-                    + "DestinationPort SMALLINT UNSIGNED,  "
-                    + "DateTimeInitiated DATETIME NOT NULL, "
-                    + "KiloBytesTransferred DECIMAL(15,3) NOT NULL, "
-                    + "PRIMARY KEY(FlowID))";
-            stmt.addBatch(create);
-
-             //Create the table.
-            create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARBINARY(16) NOT NULL, "
-                    + "hostname TEXT, "
-                    + "timestamp DATETIME NOT NULL, "
-                    + "PRIMARY KEY (ip))";
+	    if(mysql_version >= 5.6){
+		    create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARBINARY(16) NOT NULL, "
+		            + "hostname TEXT, "
+		            + "timestamp DATETIME NOT NULL, "
+		            + "PRIMARY KEY (ip))";
+	    } else {
+		    create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP (ip VARCHAR(35) NOT NULL, "
+		            + "hostname TEXT, "
+		            + "timestamp DATETIME NOT NULL, "
+		            + "PRIMARY KEY (ip))";
+	    }
             stmt.addBatch(create);
             
             stmt.executeBatch();

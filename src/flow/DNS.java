@@ -26,9 +26,19 @@ public class DNS{
 
             //Create a statement object to use.
             Statement stmt = conn.createStatement();
-            
+            ResultSet rs = stmt.executeQuery("SELECT VERSION()");
+            rs.first();
+	    String [] sql_v = rs.getString(1).split("\\.",0);
+            double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
+	    
             //Retrieve the IP addresses in the Flows table.
-            String retrieve = "SELECT DISTINCT(INET6_NTOA(SourceAddress)) FROM FLOWS";
+	    String retrieve = "";
+	    if(mysql_version >= 5.6){
+		retrieve = "SELECT DISTINCT(INET6_NTOA(SourceAddress)) FROM FLOWS";
+	    } 
+	    else {
+		retrieve = "SELECT DISTINCT(SourceAddress) FROM FLOWS";
+	    }
             ResultSet rset = stmt.executeQuery(retrieve);
 
             HashSet<String> ipAddresses = new HashSet<>();
@@ -41,7 +51,12 @@ public class DNS{
             }
 
             //Retrieve the IP addresses in the Flows table.
-            retrieve = "SELECT DISTINCT(INET6_NTOA(DestinationAddress)) FROM FLOWS";
+	    if(mysql_version >= 5.6){
+		retrieve = "SELECT DISTINCT(INET6_NTOA(DestinationAddress)) FROM FLOWS";
+	    } 
+	    else {
+		retrieve = "SELECT DISTINCT(DestinationAddress) FROM FLOWS";
+	    }
             rset = stmt.executeQuery(retrieve);
 
             while (rset.next()) {
@@ -58,7 +73,11 @@ public class DNS{
             for (String ip : ipAddresses) {
                 String hostname = getHostName(ip);
                 if (!hostname.equals(ip)) {
-                    retrieve = "REPLACE INTO DNS_LOOKUP VALUES (INET6_ATON('" + ip + "'), '" + hostname + "', " + " NOW()" + ")";
+	    	    if(mysql_version >= 5.6){
+                    	retrieve = "REPLACE INTO DNS_LOOKUP VALUES (INET6_ATON('" + ip + "'), '" + hostname + "', " + " NOW()" + ")";
+		    } else {
+                    	retrieve = "REPLACE INTO DNS_LOOKUP VALUES ('" + ip + "', '" + hostname + "', " + " NOW()" + ")";
+		    }
                     stmt.executeUpdate(retrieve);
                 }
             }

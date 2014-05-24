@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.ResultSet;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -149,11 +150,22 @@ public class Agent {
                 password);
         Statement stmt = con.createStatement();
         DecimalFormat kilobyte_format = new DecimalFormat("0.###");        
+        ResultSet rs = stmt.executeQuery("SELECT VERSION()");
+        rs.first();
+	String [] sql_v = rs.getString(1).split("\\.",0);
+        double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
         for (Flow f : flows) {
-            stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
+	    if(mysql_version >= 5.6){
+            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
                     + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %.3f )",
                     f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", f.getKilobytesTransferred()
                     ));
+	    } else {
+            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
+                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %.3f )",
+                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", f.getKilobytesTransferred()
+                    ));		
+	    }
         }
         stmt.close();
     }
