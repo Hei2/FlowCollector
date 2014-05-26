@@ -16,9 +16,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Vector;
-
-import jsflow.Agent;
 import jsflow.header.CounterRecordHeader;
 import jsflow.header.EthernetInterfaceCounterHeader;
 import jsflow.header.ExpandedCounterSampleHeader;
@@ -59,17 +58,16 @@ public class SFlowCollector extends Thread {
         this.displayOutput = displayOutput;
     }
     private int port;
-    private ArrayList<Agent> agents;
+    private HashSet<Agent> agents;
 
     public SFlowCollector() {
         this.port = 6343;
-        agents = new ArrayList<>();
+        agents = new HashSet<>();
     }
 
-        
     public SFlowCollector(int port) {
         this.port = port;
-        agents = new ArrayList<>();
+        agents = new HashSet<>();
     }
 
     /**
@@ -88,76 +86,81 @@ public class SFlowCollector extends Thread {
                     ds.receive(dp);
                     SflowHeader sfh = SflowHeader.parse(dp.getData());
 
-                    // Append data to their respective agents
+                    // Append data to their respective agents & subAgents
                     boolean found = false;
-                    // First, check if the agent already exists
-                    for (Agent agent : agents) {
-                        if (sfh.getAddressAgent().toString().equals(agent.getId())) { // new sub agent
+                    Agent agent = new Agent(sfh.getAddressAgent().toString());
+                    for(Agent a : agents){
+                        if(a.equals(agent)){
+                            agent = a;
                             found = true;
-                            for (SampleDataHeader sdh : sfh.getSampleDataHeaders()) {
-                                GenericFlowSampleHeader fsh;
-                                
-                                // Check type of sample data.
-                                if (sdh.getSampleDataFormat() == SampleDataHeader.FLOWSAMPLE) {
-                                    fsh = sdh.getFlowSampleHeader();
-                                } else if (sdh.getSampleDataFormat() == SampleDataHeader.EXPANDEDFLOWSAMPLE) {
-                                    fsh = sdh.getExpandedFlowSampleHeader();
-                                } else {
-                                    fsh = null;
-                                }
-
-                                if (fsh != null) {
-                                    // Create a FlowSamplePacket representation that stores only needed information.
-                                    FlowSamplePacket fsp = new FlowSamplePacket();
-                                    fsp.setSampleSeqNo(fsh.getSequenceNumber());
-                                    fsp.setSamplePool(fsh.getSamplePool());
-                                    fsp.setSource(((Long) fsh.getSourceIDType()).toString());
-
-                                    Vector<FlowRecordHeader> flowRecords = fsh.getFlowRecords();
-
-                                    for (FlowRecordHeader frh : flowRecords) {
-                                        // Each Flow Sample has 4 Flow Records, 1, 1001, 1002, 1003
-                                        // We are only parsing 1, the Raw Packet Header 
-                                        // Other counter data may be useful in the future
-                                        if (frh.getFlowDataFormat() == frh.RAW_PACKET_HEADER) {
-                                            RawPacketHeader rph = frh.getRawPacketHeader();
-                                            fsp.setPacketSize(rph.getFrameLength());
-
-                                            IPHeader iph = rph.getMacHeader().getIph();
-                                            fsp.setDestIP(iph.getDestAddress());
-                                            fsp.setSrcIP(iph.getSrcAddress());
-                                            fsp.setProtocol(iph.getProtocol());
-
-                                            TransportHeader tph = iph.getTph();
-                                            fsp.setSourcePort(tph.getSrcPort());
-                                            fsp.setDestPort(tph.getDestPort());
-                                        }
-                                    }
-                                    agent.addPacket(fsp); // add packet to agent
-                                }
-                            }
+                            break;
                         }
                     }
+                    if(!found) agents.add(agent);
 
-                    // Agent hasn't been created yet.
-                    if (!found) {
-                        Agent newAgent = new Agent(sfh.getAddressAgent().toString());
-                        agents.add(newAgent);
+                    for (SampleDataHeader sdh : sfh.getSampleDataHeaders()) {
+                        GenericFlowSampleHeader fsh;
+
+                        // Check type of sample data.
+                        if (sdh.getSampleDataFormat() == SampleDataHeader.FLOWSAMPLE) {
+                            fsh = sdh.getFlowSampleHeader();
+                        } else if (sdh.getSampleDataFormat() == SampleDataHeader.EXPANDEDFLOWSAMPLE) {
+                            fsh = sdh.getExpandedFlowSampleHeader();
+                        } else {
+                            fsh = null; // Counter records are not parsed currently.
+                        }
+
+                        if (fsh != null) {
+                            // Create a FlowSamplePacket representation that stores only needed information.
+                            FlowSamplePacket fsp = new FlowSamplePacket();
+                            fsp.setSampleSeqNo(fsh.getSequenceNumber());
+                            fsp.setSamplePool(fsh.getSamplePool());
+                            fsp.setSource(((Long) fsh.getSourceIDType()).toString());
+
+                            Vector<FlowRecordHeader> flowRecords = fsh.getFlowRecords();
+
+                            for (FlowRecordHeader frh : flowRecords) {
+                                // Each Flow Sample has 4 Flow Records, 1, 1001, 1002, 1003
+                                // We are only parsing 1, the Raw Packet Header 
+                                // Other counter data may be useful in the future
+                                if (frh.getFlowDataFormat() == frh.RAW_PACKET_HEADER) {
+                                    RawPacketHeader rph = frh.getRawPacketHeader();
+                                    fsp.setPacketSize(rph.getFrameLength());
+
+                                    IPHeader iph = rph.getMacHeader().getIph();
+                                    fsp.setDestIP(iph.getDestAddress());
+                                    fsp.setSrcIP(iph.getSrcAddress());
+                                    fsp.setProtocol(iph.getProtocol());
+
+                                    TransportHeader tph = iph.getTph();
+                                    fsp.setSourcePort(tph.getSrcPort());
+                                    fsp.setDestPort(tph.getDestPort());
+                                }
+                            }
+
+                            SubAgent sa = agent.get(Long.toString(fsh.getSourceIDType()));
+                            if (sa == null) {
+                                sa = new SubAgent(Long.toString(fsh.getSourceIDType()));
+                                agent.add(sa);
+                            }
+                            sa.addPacket(fsp);
+                        }
                     }
 
                     // Currently hard-coded to insert / print statistics every 60 seconds
                     if (System.currentTimeMillis() - initialTime >= 60000) {
-                        for (Agent agent : agents) {
-                            try {
-                                agent.analyze();
-                                agent.insertFlows();
-                                
-                                if(displayOutput){
-                                    agent.printFlows();
-                                    agent.printTop();
+                        for (Agent a : agents) {
+                            for (SubAgent sa : agent.getSubAgents()) {
+                                try {
+                                    sa.analyze();
+                                    sa.insertFlows();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
                                 }
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            }
+                            if (displayOutput) {
+                                a.printFlows();
+                                a.printTop();
                             }
                         }
                         // Reinitialize variables
@@ -175,7 +178,7 @@ public class SFlowCollector extends Thread {
                 } catch (UtilityException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
-                } catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
