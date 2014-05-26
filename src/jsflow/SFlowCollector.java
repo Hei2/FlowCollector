@@ -154,6 +154,7 @@ public class SFlowCollector extends Thread {
                                 
                                 if(displayOutput){
                                     agent.printFlows();
+                                    agent.printTop();
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();

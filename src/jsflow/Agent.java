@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.TreeSet;
 
 /**
  * Agent represents a router that sample packets are received from. Sample
@@ -28,14 +28,12 @@ public class Agent {
     private String database = DatabaseProperties.getDatabase();
     private String id;
     private ArrayList<FlowSamplePacket> packets;
-    private HashSet<String> srcIPTable;
     private ArrayList<Flow> flows;
     private long totalPacketsSize;
 
     public Agent(String id) {
         this.setId(id);
         packets = new ArrayList<FlowSamplePacket>();
-        srcIPTable = new HashSet<String>();
         flows = new ArrayList<Flow>();
     }
 
@@ -68,15 +66,12 @@ public class Agent {
      * @param packet
      */
     public void addPacket(FlowSamplePacket packet) {
-        totalPacketsSize += packet.getPacketSize();
-        srcIPTable.add(packet.getSrcIP());
-
         for (FlowSamplePacket fsp : packets) {
             if (fsp.getSampleSeqNo() == packet.getSampleSeqNo()) { // this sample has already been stored.
                 return;
             }
         }
-
+        totalPacketsSize += packet.getPacketSize();
         this.packets.add(packet);
     }
 
@@ -106,9 +101,9 @@ public class Agent {
      */
     public void analyze() {
         // Sort by SrcIP, then by DestIP. This groups packets with same Src and Dest together.
-        Collections.sort(packets);
         double samplingRatio = samplingRatio();
         double averagePacketSize = averagePacketSize();
+        Collections.sort(packets);
 
         // O(n) complexity, where n is the number of sampled packets.
         for (int i = 0; i < packets.size(); i++) {
@@ -129,6 +124,7 @@ public class Agent {
             }
             int packetsSent = (int) Math.round(count * samplingRatio);
             double kilobytes_transferred = packetsSent * averagePacketSize / 1024;
+            f.setNoSamplePackets(count);
             f.setPacketsSent(packetsSent);
             f.setKilobytesTransferred(kilobytes_transferred);
             flows.add(f);
@@ -157,13 +153,13 @@ public class Agent {
         for (Flow f : flows) {
 	    if(mysql_version >= 5.6){
             	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
-                    + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %.3f )",
-                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", f.getKilobytesTransferred()
+                    + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %s )",
+                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred())
                     ));
 	    } else {
             	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
-                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %.3f )",
-                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", f.getKilobytesTransferred()
+                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %s )",
+                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred())
                     ));		
 	    }
         }
@@ -180,7 +176,95 @@ public class Agent {
          }
     }
     
-//    public void printTop(){
-//        
-//    }
+    /**
+     * Print top 10 sources and destinations.
+     */
+    public void printTop(){
+        ArrayList<TrafficNode> nodes = new ArrayList<>();
+        ArrayList<Flow> flows = new ArrayList<>(this.flows.size());
+        for(int i = 0; i < this.flows.size(); i++){
+            flows.add(this.flows.get(i));
+        }
+        
+        // Accumulate all sent data for each node
+        Collections.sort(flows, new FlowSrcIPComparator()); // sorted by IP
+        for (int i = 0; i < flows.size(); i++) {
+            Flow curr = flows.get(i);
+            double totalPacketsSent = curr.getPacketsSent();
+            double totalKilobytesSent = curr.getKilobytesTransferred();
+            String ip = curr.getSrcIP();
+            if(i != (flows.size() - 1 )){
+                Flow next = flows.get(i + 1);
+                while (next.getSrcIP().equals(ip)) {
+                    totalPacketsSent += next.getPacketsSent();
+                    totalKilobytesSent += next.getKilobytesTransferred();
+                    i++;
+                    if (i >= packets.size()) {
+                        break;
+                    }
+                    next = flows.get(i);
+                }
+            }
+            TrafficNode tn = new TrafficNode();
+            tn.setTotalKiloBytesSent(totalKilobytesSent);
+            tn.setTotalPacketsSent(totalPacketsSent);
+            tn.setIpAddress(ip);
+            nodes.add(tn);
+        }
+        
+        // Accumulate all received data for each node
+        Collections.sort(flows, new FlowDestIPComparator());
+        for (int i = 0; i < flows.size(); i++) {
+            Flow curr = flows.get(i);
+            double totalPacketsReceived = curr.getPacketsSent();
+            double totalKilobytesReceived = curr.getKilobytesTransferred();
+            String ip = curr.getDestIP();
+            if(i != (flows.size() - 1 )){
+                Flow next = flows.get(i + 1);
+                while (next.getDestIP().equals(ip)) {
+                    totalPacketsReceived += next.getPacketsSent();
+                    totalKilobytesReceived += next.getKilobytesTransferred();
+                    i++;
+                    if (i >= packets.size()) {
+                        break;
+                    }
+                    next = flows.get(i);
+                }
+            }
+        
+            TrafficNode tn = new TrafficNode();
+            tn.setTotalKiloBytesReceived(totalKilobytesReceived);
+            tn.setTotalPacketsReceived(totalPacketsReceived);
+            tn.setIpAddress(ip);
+            
+            boolean contain = false;
+            for(int j = 0; j < nodes.size(); j++){
+                if(nodes.get(j).equals(tn)){
+                    nodes.get(j).setTotalKiloBytesReceived(totalKilobytesReceived);
+                    nodes.get(j).setTotalPacketsReceived(totalPacketsReceived);
+                    contain = true;
+                    break;
+                } 
+            }
+            if(!contain){
+                nodes.add(tn);
+            }
+        }
+        
+        Collections.sort(nodes, (new TrafficNode.packetsSentComparator()));
+        System.out.println("Top 10 Sources");
+        System.out.println("---------------");
+        for(int i = 0; i < 10; i++){
+            System.out.println(String.format("%d\t%s\t%.3f MB", i+1, nodes.get(i).getIpAddress(), nodes.get(i).getTotalKiloBytesSent() / 1024));
+        }
+        System.out.println();
+        
+        Collections.sort(nodes, (new TrafficNode.packetsReceivedComparator()));
+        System.out.println("Top 10 Destinations");
+        System.out.println("---------------");
+        for(int i = 0; i < 10; i++){
+            System.out.println(String.format("%d\t%s\t%.3f MB", i+1, nodes.get(i).getIpAddress(), nodes.get(i).getTotalKiloBytesReceived() / 1024));
+        }
+
+    }
 }
