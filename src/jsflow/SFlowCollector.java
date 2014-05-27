@@ -75,8 +75,6 @@ public class SFlowCollector extends Thread {
      */
     public void run() {
         try (DatagramSocket ds = new DatagramSocket(port)) {
-            System.out.println("-------jsFlowCollector-------");
-            System.out.println("Datagram socket for receiving created on port " + port + ".");
             long initialTime = System.currentTimeMillis();
             while (true) {
                 try {
@@ -140,7 +138,7 @@ public class SFlowCollector extends Thread {
 
                             SubAgent sa = agent.get(Long.toString(fsh.getSourceIDType()));
                             if (sa == null) {
-                                sa = new SubAgent(Long.toString(fsh.getSourceIDType()));
+                                sa = new SubAgent(Long.toString(fsh.getSourceIDType()), agent.getIpAddress());
                                 agent.add(sa);
                             }
                             sa.addPacket(fsp);

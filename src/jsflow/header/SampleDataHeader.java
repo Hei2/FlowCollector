@@ -103,10 +103,10 @@ public class SampleDataHeader {
 			sdh.setFlowSampleHeader(fs);
 		}
 		
-		if ((sdh.getSampleDataFormat() != EXPANDEDFLOWSAMPLE) && (sdh.getSampleDataFormat() != EXPANDEDCOUNTERSAMPLE)
-				&& (sdh.getSampleDataFormat() != FLOWSAMPLE)) {
-			System.err.println("Sample data format not yet supported: " + sdh.getSampleDataFormat());
-		}
+//		if ((sdh.getSampleDataFormat() != EXPANDEDFLOWSAMPLE) && (sdh.getSampleDataFormat() != EXPANDEDCOUNTERSAMPLE)
+//				&& (sdh.getSampleDataFormat() != FLOWSAMPLE)) {
+//			System.err.println("Sample data format not yet supported: " + sdh.getSampleDataFormat());
+//		}
 		
 		return sdh;	
 	}

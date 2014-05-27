@@ -37,7 +37,6 @@ public class NetFlowCollector extends Thread
      */
     private void CapturePackets()
     {        
-        System.out.println("Capturing packets on port: " + RECEIVE_PORT);
         try
         {
             DatagramSocket serverSocket = new DatagramSocket(RECEIVE_PORT);

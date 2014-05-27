@@ -10,7 +10,6 @@ package jsflow;
  * @author weika_000
  */
 public class Flow implements Comparable<Flow>{
-
     private String destIP;
     private String srcIP;
     private int protocol;
@@ -28,7 +27,7 @@ public class Flow implements Comparable<Flow>{
         setSrcPort(fsp.getSourcePort());
         setDestPort(fsp.getDestPort());
     }
-
+    
     public double getNoSamplePackets() {
         return noSamplePackets;
     }

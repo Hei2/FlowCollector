@@ -23,6 +23,15 @@ import jsflow.SFlowCollector;
  */
 public class FlowCollector
 {
+    
+    public static void printHelp(){
+        System.out.println("Usage: FlowCollector [-s sflowport]");
+        System.out.println();
+        System.out.println("-s sflowport\t: Specifies a port the SFlow Collector should listen on.");
+        System.out.println("-n netflowport\t: Specifies a port the NetFlow Collector should listen on.");
+        System.out.println("-o\t: Specifies whether output such as flows and top talkers should be displayed.");
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -49,6 +58,12 @@ public class FlowCollector
             boolean display = false;
             NetFlowCollector nc;
             SFlowCollector sc;
+            
+            if(args[0].equals("-help")){
+                printHelp();
+                return;
+            }
+            
             // Take in arguments from command line
             for(int i = 0; i < args.length; i++){
                 switch(args[i]){
@@ -62,14 +77,18 @@ public class FlowCollector
             createTables();
         
             if(netflow_port == -1){
+                System.out.println("NetFlow Collector listening on port 2055 (default).");
                 nc = new NetFlowCollector();
             } else {
+                System.out.println("NetFlow Collector listening on port " + netflow_port + ".");
                 nc = new NetFlowCollector(netflow_port);
             }
             
             if(sflow_port == -1){
+                System.out.println("NetFlow Collector listening on port 6343 (default).");                
                 sc = new SFlowCollector();
             } else{
+                System.out.println("SFlow Collector listening on port " + sflow_port + ".");                
                 sc = new SFlowCollector(sflow_port);
             }
             sc.setDisplayOutput(display);
@@ -307,6 +326,7 @@ public class FlowCollector
 		            + "DestinationPort SMALLINT UNSIGNED,  "
 		            + "DateTimeInitiated DATETIME NOT NULL, "
 		            + "KiloBytesTransferred DECIMAL(15,3) NOT NULL, "
+                            + "AgentAddress VARBINARY(16) NOT NULL,"
 		            + "PRIMARY KEY(FlowID))";
 	    } else {
 		    create = "CREATE TABLE IF NOT EXISTS FLOWS ( FlowID SERIAL, "
@@ -317,6 +337,7 @@ public class FlowCollector
 		            + "DestinationPort SMALLINT UNSIGNED,  "
 		            + "DateTimeInitiated DATETIME NOT NULL, "
 		            + "KiloBytesTransferred DECIMAL(15,3) NOT NULL, "
+		            + "AgentAddress VARCHAR(35) NOT NULL, "                            
 		            + "PRIMARY KEY(FlowID))";		   
 	    }
 	    stmt.addBatch(create);

@@ -22,6 +22,7 @@ import java.util.TreeSet;
  *
  */
 public class SubAgent {
+    private String agentIP;
     private String user = DatabaseProperties.getUser();
     private String password = DatabaseProperties.getPassword();
     private String database = DatabaseProperties.getDatabase();
@@ -30,8 +31,9 @@ public class SubAgent {
     private ArrayList<Flow> flows;
     private long totalPacketsSize;
 
-    public SubAgent(String id) {
+    public SubAgent(String id, String agentIP) {
         this.setId(id);
+        this.setAgentIP(agentIP);        
         packets = new ArrayList<FlowSamplePacket>();
         flows = new ArrayList<Flow>();
     }
@@ -48,6 +50,14 @@ public class SubAgent {
         return totalPacketsSize;
     }
 
+    public String getAgentIP() {
+        return agentIP;
+    }
+
+    public void setAgentIP(String agentIP) {
+        this.agentIP = agentIP;
+    }
+    
     /**
      * Returns the packets contained in this source.
      *
@@ -156,14 +166,14 @@ public class SubAgent {
         double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
         for (Flow f : flows) {
 	    if(mysql_version >= 5.6){
-            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
-                    + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %s )",
-                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred())
+            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred, AgentAddress)"
+                    + String.format(" VALUES(%d, INET6_ATON('%s'), INET6_ATON('%s'), %d, %d, %s, %s, INET6_ATON('%s') )",
+                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred()), this.getAgentIP()
                     ));
 	    } else {
-            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred)"
-                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %s )",
-                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred())
+            	stmt.executeUpdate("INSERT INTO FLOWS (ProtocolNumber, SourceAddress, DestinationAddress, SourcePort, DestinationPort, DateTimeInitiated, KiloBytesTransferred, AgentAddress)"
+                    + String.format(" VALUES(%d, '%s', '%s', %d, %d, %s, %s, '%s' )",
+                    f.getProtocol(), f.getSrcIP(), f.getDestIP(), f.getSrcPort(), f.getDestPort(), "NOW()", kilobyte_format.format(f.getKilobytesTransferred()),  this.getAgentIP()
                     ));		
 	    }
         }
