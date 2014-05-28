@@ -193,6 +193,7 @@ public class SubAgent {
     
     /**
      * Print top 10 sources and destinations.
+     * @return aggregated traffic
      */
     public ArrayList<TrafficNode> aggregateTraffic(){
         ArrayList<TrafficNode> nodes = new ArrayList<>();
@@ -208,13 +209,13 @@ public class SubAgent {
             double totalPacketsSent = curr.getPacketsSent();
             double totalKilobytesSent = curr.getKilobytesTransferred();
             String ip = curr.getSrcIP();
-            if(i != (flows.size() - 1 )){
+            if(i < (flows.size() - 1 )){
                 Flow next = flows.get(i + 1);
                 while (next.getSrcIP().equals(ip)) {
                     totalPacketsSent += next.getPacketsSent();
                     totalKilobytesSent += next.getKilobytesTransferred();
                     i++;
-                    if (i >= packets.size()) {
+                    if (i >= flows.size()) {
                         break;
                     }
                     next = flows.get(i);
@@ -234,13 +235,13 @@ public class SubAgent {
             double totalPacketsReceived = curr.getPacketsSent();
             double totalKilobytesReceived = curr.getKilobytesTransferred();
             String ip = curr.getDestIP();
-            if(i != (flows.size() - 1 )){
+            if(i < (flows.size() - 1 )){
                 Flow next = flows.get(i + 1);
                 while (next.getDestIP().equals(ip)) {
                     totalPacketsReceived += next.getPacketsSent();
                     totalKilobytesReceived += next.getKilobytesTransferred();
                     i++;
-                    if (i >= packets.size()) {
+                    if (i >= flows.size()) {
                         break;
                     }
                     next = flows.get(i);

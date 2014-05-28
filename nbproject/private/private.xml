@@ -3,9 +3,8 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/Dropbox/Git/FlowCollector/src/jsflow/Agent.java</file>
-            <file>file:/D:/Dropbox/Git/FlowCollector/src/flow/FlowCollector.java</file>
-            <file>file:/D:/Dropbox/Git/FlowCollector/src/jsflow/SFlowCollector.java</file>
+            <file>file:/D:/Dropbox/Git/FlowCollector/src/jsflow/Flow.java</file>
+            <file>file:/D:/Dropbox/Git/FlowCollector/src/jsflow/SubAgent.java</file>
         </group>
     </open-files>
 </project-private>
