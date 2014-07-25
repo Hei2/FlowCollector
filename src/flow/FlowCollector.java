@@ -12,7 +12,8 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsflow.SFlowCollector;
-
+import java.util.Timer;
+import java.util.TimerTask;
 //http://stackoverflow.com/questions/5160414/read-netflow-rflow-dd-wrt-packet-content
 //http://stackoverflow.com/questions/10556829/sending-and-receiving-udp-packets-using-java
 //http://dev.mysql.com/doc/refman/5.0/es/connector-j-reference-configuration-properties.html
@@ -51,8 +52,22 @@ public class FlowCollector
         } catch (UninitializedException ex) {
             ex.printStackTrace();
         }
-        
-        try{            
+        //String[] argst= {"-s","6343"};
+        //args = argst;
+        try{ 
+            //for test only
+            TimeStringGen test = new TimeStringGen();        
+            String startTimeStr =new String(TimeStringGen.getTimeStr());
+                        //String startSecsStr =new String(TimeStringGen.getSecsStr());
+                        String startSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-56000)); 
+                        String endSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-36000)); 
+                        //next DNS lookup time start point
+                        TimeStringGen.setTimeStr();
+                        TimeStringGen.setSecsStr();
+ 
+                        //DNS.performDNSLookup("2014-07-10 12:03:24");
+                        Classifier.cluster(startSecsStr,endSecsStr);
+                        
             int sflow_port =  -1;
             int netflow_port = -1;
             boolean display = false;
@@ -93,21 +108,52 @@ public class FlowCollector
             }
             sc.setDisplayOutput(display);
             
+            //store initial time
+            TimeStringGen TimeSecsStr = new TimeStringGen(); 
+            TimeStringGen.setTimeStr();
+            TimeStringGen.setSecsStr();         
             
             nc.start();
             sc.start();
-            double initialTime = System.currentTimeMillis();
+            //double initialTime = System.currentTimeMillis();
             
-            while(true){
-                if(System.currentTimeMillis() - initialTime >= 3600000){ // DNS lookup every hour 3600000
+            //Acquire datetime string, pass it to SQL query to filter newly added ip entries
+            TimeStringGen.setTimeStr();
+            
+            //Use timer instead of while-loop to trigger DNS lookup
+
+            
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask(){
+                @Override
+                public void run() {
                     try{
-                        DNS.performDNSLookup();
+                        //record start time point of DNS lookup and set start time of next DNS look up
+                        String startTimeStr =new String(TimeStringGen.getTimeStr());
+                        String startSecsStr =new String(TimeStringGen.getSecsStr());
+                        //next DNS lookup time start point
+                        TimeStringGen.setTimeStr();
+                        TimeStringGen.setSecsStr();
+                        //perform DNS lookup for records between startTimeStr and current time
+                        DNS.performDNSLookup(startTimeStr,TimeStringGen.getTimeStr());
+                        //DNS.performDNSLookup("2014-07-10 12:03:24");
+                        Classifier.cluster(startSecsStr,TimeStringGen.getSecsStr());
                     }catch(Exception e){
                         e.printStackTrace();
                     }
-                    initialTime = System.currentTimeMillis(); // reset initial time
                 }
-              }
+            }, 1000, 1000);
+            
+//            while(true){
+//                if(System.currentTimeMillis() - initialTime >= 3600000){ // DNS lookup every hour 3600000
+//                    try{
+//                        DNS.performDNSLookup(initialTimeStr);
+//                    }catch(Exception e){
+//                        e.printStackTrace();
+//                    }
+//                    initialTime = System.currentTimeMillis(); // reset initial time
+//                }
+//              }
         } catch (SQLException ex) {
             if (ex.getSQLState().equals("08S01")) {
                 System.err.println("Error: Failed to connect to database: " + DatabaseProperties.getDatabase());

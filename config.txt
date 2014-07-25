@@ -3,7 +3,9 @@
 #URL = The IP address of the database followed by the port number
 #USER = The username for connecting to the database
 #PASS = The password associated with USER.
+#DB=localhost:3306/flowcollectordb
 
-DB=localhost:3306/flowcollectordb
+DB=tails.cs.ndsu.nodak.edu:3306/flowcollectordb
 USER=flow
+#PASS=
 PASS=Knuckles

@@ -11,14 +11,14 @@ import java.sql.Statement;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import static netflow.Functions.getHostName;
+//import static netflow.Functions.getHostName;
 
 public class DNS{
 
-    public static boolean performDNSLookup() {
+    public static boolean performDNSLookup(String StartTimeStr,String EndTimeStr) {
         try {
             System.out.println("Beginning IP collection");
-
+            createDNSTable();
             //Load the driver.
             Class.forName("com.mysql.jdbc.Driver");
 
@@ -35,10 +35,10 @@ public class DNS{
             //Retrieve the IP addresses in the Flows table.
 	    String retrieve = "";
 	    if(mysql_version >= 5.6){
-		retrieve = "SELECT DISTINCT(INET6_NTOA(SourceAddress)) FROM FLOWS";
+		retrieve = "SELECT DISTINCT(INET6_NTOA(SourceAddress)) FROM FLOWS WHERE DateTimeInitiated between "+ "'"+StartTimeStr+"' and '"+EndTimeStr+"'";
 	    } 
 	    else {
-		retrieve = "SELECT DISTINCT(SourceAddress) FROM FLOWS";
+		retrieve = "SELECT DISTINCT(SourceAddress) FROM FLOWS WHERE DateTimeInitiated between "+ "'"+StartTimeStr+"' and '"+EndTimeStr+"'";
 	    }
             ResultSet rset = stmt.executeQuery(retrieve);
 
@@ -53,16 +53,17 @@ public class DNS{
 
             //Retrieve the IP addresses in the Flows table.
 	    if(mysql_version >= 5.6){
-		retrieve = "SELECT DISTINCT(INET6_NTOA(DestinationAddress)) FROM FLOWS";
+		retrieve = "SELECT DISTINCT(INET6_NTOA(DestinationAddress)) FROM FLOWS WHERE DateTimeInitiated between "+ "'"+StartTimeStr+"' and '"+EndTimeStr+"'";
 	    } 
 	    else {
-		retrieve = "SELECT DISTINCT(DestinationAddress) FROM FLOWS";
+		retrieve = "SELECT DISTINCT(DestinationAddress) FROM FLOWS WHERE DateTimeInitiated between "+ "'"+StartTimeStr+"' and '"+EndTimeStr+"'";
 	    }
             rset = stmt.executeQuery(retrieve);
 
             while (rset.next()) {
                 String ip = rset.getString(1);
                 //Add only unique IPs.
+                //!ip.equals("Unknown Host") part may be removed, cause no "Unknown Host" assigment in getHostName function
                 if (!ip.equals("Unknown Host") && !ip.startsWith("192.")) {
                     ipAddresses.add(ip);
                 }
