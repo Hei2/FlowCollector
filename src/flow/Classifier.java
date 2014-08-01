@@ -23,7 +23,7 @@ import java.util.HashSet;
 
 public class Classifier {
     
-        public static boolean cluster(String StartSecsStr,String EndSecsStr) {
+public static boolean cluster(String StartSecsStr,String EndSecsStr) {
         try {
             createP2PTable();
             //Load the driver.
@@ -36,7 +36,7 @@ public class Classifier {
             //Since Netflow v5 is unidirectional and only for ingress, for certain interface either source address or destination address
             //is always address of local host.
 	    String retrieve = "";
-            retrieve = "SELECT DISTINCT srcaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "+"WHERE b.unix_secs between "+StartSecsStr+" and "+EndSecsStr;
+            retrieve = "SELECT DISTINCT srcaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id WHERE b.unix_secs between "+StartSecsStr+" and "+EndSecsStr;
             ResultSet rset = stmt.executeQuery(retrieve);
             
             HashSet<Integer> ipAddresses = new HashSet<>();            
@@ -44,14 +44,19 @@ public class Classifier {
                 int ip = rset.getInt(1);
                 ipAddresses.add(ip);
             }
-
+ 
             //Perform clustering on every internal host.
             double[] x = new double[2];
             long id = 0;
             int dstaddr = 0;
             for (int ip : ipAddresses) {
+                //
+                //perform flow sets filtering
+                //flowFilter(ip);
+                
+                //retrieve flow info from database for this particular host
                 retrieve = "SELECT a.id,dPkts,dOctets,dstaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "
-                        +"WHERE b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and srcaddr="+ip;
+                        +"WHERE dstaddr not in (select ip from DNS_LOOKUP_Nf where hostname<>'UnknownHost') b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and srcaddr="+ip;
                 ResultSet rset1Host = stmt.executeQuery(retrieve);
                 
                 //Instantiate a new birch tree instance       
@@ -104,6 +109,15 @@ public class Classifier {
         } 
         return false;
     }
+        
+//flow sets filter
+public static boolean flowFilter(int ip) {   
+    //stitch outgoing and incoming traffic for the host
+    
+    //
+    
+    return true;
+}         
         
 public static boolean createP2PTable() {
         try {

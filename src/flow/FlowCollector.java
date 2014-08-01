@@ -1,19 +1,21 @@
 package flow;
 
-import netflow.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.ResultSet;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsflow.SFlowCollector;
-import java.util.Timer;
-import java.util.TimerTask;
+import netflow.*;
 //http://stackoverflow.com/questions/5160414/read-netflow-rflow-dd-wrt-packet-content
 //http://stackoverflow.com/questions/10556829/sending-and-receiving-udp-packets-using-java
 //http://dev.mysql.com/doc/refman/5.0/es/connector-j-reference-configuration-properties.html
@@ -36,7 +38,7 @@ public class FlowCollector
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args)
+    public static void main(String[] args) throws UnknownHostException
     {        
         //Get the url, user, and password from the config file.
         File config = new File("config.txt");
@@ -58,15 +60,18 @@ public class FlowCollector
             //for test only
             TimeStringGen test = new TimeStringGen();        
             String startTimeStr =new String(TimeStringGen.getTimeStr());
-                        //String startSecsStr =new String(TimeStringGen.getSecsStr());
-                        String startSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-56000)); 
-                        String endSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-36000)); 
-                        //next DNS lookup time start point
-                        TimeStringGen.setTimeStr();
-                        TimeStringGen.setSecsStr();
- 
-                        //DNS.performDNSLookup("2014-07-10 12:03:24");
-                        Classifier.cluster(startSecsStr,endSecsStr);
+            //String startSecsStr =new String(TimeStringGen.getSecsStr());
+            //String startSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-56000)); 
+            //String endSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-36000)); 
+            String startSecsStr =new String(String.valueOf(1406268798)); 
+            String endSecsStr =new String(String.valueOf(1406289878)); 
+            //next DNS lookup time start point
+            TimeStringGen.setTimeStr();
+            TimeStringGen.setSecsStr();
+
+            DNS.performDNSLookup4NetFlow(startSecsStr,endSecsStr);
+            Classifier.cluster(startSecsStr,endSecsStr);
+            //end of test
                         
             int sflow_port =  -1;
             int netflow_port = -1;
