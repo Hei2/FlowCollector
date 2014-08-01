@@ -1,10 +1,7 @@
 package flow;
 
-import flow.DatabaseProperties;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -13,6 +10,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -143,40 +141,29 @@ public class DNS{
             System.out.println("IP collection complete\nBeginning DNS lookups");
 
             //Perform a lookup on each IP.
-//            long before1 = System.currentTimeMillis();
-//            ExecutorService executorService = Executors.newFixedThreadPool(40);
-//            List<Callable<String>> tasklst = new ArrayList<Callable<String>>();
-//            for (String ip : ipAddresses) {
-//                tasklst.add(new reverseDNSLookupThread(ip));
-//            }
-//            
-//            try {
-//                List<Future<String>> HostNameLst= executorService.invokeAll(tasklst);
-//            }
-//            catch(InterruptedException e){
-//                System.out.println("Threads pool interrupted");
-//            }
-//            long after1 = System.currentTimeMillis();
-//            System.out.println((after1 - before1) + " ms");
-            
-            int temp =0;
-            long before = System.currentTimeMillis();
-            for (String ip : ipAddresses) {                
-                String hostname = getHostName(ip);                                
-//                if (!hostname.equals(ip)) {
-//                    retrieve = "REPLACE INTO DNS_LOOKUP_Nf VALUES (case when INET_ATON('" + ip + "')>0x80000000 then (INET_ATON('" + ip + "')-0x80000000)*-1 else INET_ATON('" + ip + "') end, '" + hostname + "', " + " NOW()" + ")";
-//                    stmt.executeUpdate(retrieve);
-//                }
-//                else{
-//                    retrieve = "REPLACE INTO DNS_LOOKUP_Nf VALUES (case when INET_ATON('" + ip + "')>0x80000000 then (INET_ATON('" + ip + "')-0x80000000)*-1 else INET_ATON('" + ip + "') end, 'UnknownHost', " + " NOW()" + ")";
-//                    stmt.executeUpdate(retrieve);
-//                }
-                temp++;
-                System.out.println(temp);
+            ExecutorService executorService = Executors.newFixedThreadPool(40);
+            List<Callable<String[]>> tasklst = new ArrayList<Callable<String[]>>();
+            for (String ip : ipAddresses) {
+                tasklst.add(new reverseDNSLookupThread(ip));
+            }            
+            try {
+                List<Future<String[]>> HostLst= executorService.invokeAll(tasklst);
+                try {
+                    for (Future<String[]> hostname : HostLst) {                                           
+                        if(!hostname.get()[0].equals(hostname.get()[1])){
+                            System.out.println(hostname.get()[1]);
+                        }
+                        retrieve = "REPLACE INTO DNS_LOOKUP_Nf VALUES (case when INET_ATON('" + hostname.get()[0] + "')>0x80000000 then (INET_ATON('" + hostname.get()[0] + "')-0x80000000)*-1 else INET_ATON('" + hostname.get()[0] + "') end, '" + hostname.get()[1] + "', " + " NOW()" + ")";
+                        stmt.executeUpdate(retrieve);                        
+                        //System.out.println(hostname.get()[0]);
+                    }
+                } catch (ExecutionException ex) { ex.printStackTrace(); return false; }
             }
-            long after = System.currentTimeMillis();
-            System.out.println((after - before) + " ms");
-
+            catch(InterruptedException ex){
+                System.out.println("Threads pool interrupted");
+                executorService.shutdown();
+            }
+            executorService.shutdown();
             System.out.println("DNS lookups complete");
             return true;
         } catch (SQLException ex) {
@@ -190,9 +177,7 @@ public class DNS{
             System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
         } catch (ClassNotFoundException ex) {
             System.out.println(ex.getMessage());
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        } 
         return false;
     }
     
@@ -266,30 +251,27 @@ public class DNS{
     }
 
 
-public static String getHostName(String hostIp) throws IOException {
-	try{
-            Record opt = null;
-            Resolver res = new ExtendedResolver();
+    public static String getHostName(String hostIp) throws IOException {
+    try{
+        Record opt = null;
+        Resolver res = new ExtendedResolver();
 
-            Name name = ReverseMap.fromAddress(hostIp);
-            int type = Type.PTR;
-            int dclass = DClass.IN;
-            Record rec = Record.newRecord(name, type, dclass);
-            Message query = Message.newQuery(rec);
-            Message response = res.send(query);
+        Name name = ReverseMap.fromAddress(hostIp);
+        int type = Type.PTR;
+        int dclass = DClass.IN;
+        Record rec = Record.newRecord(name, type, dclass);
+        Message query = Message.newQuery(rec);
+        Message response = res.send(query);
 
-            Record[] answers = response.getSectionArray(Section.ANSWER);
-            if (answers.length == 0) {
-                return hostIp;
-            } else {
-                return answers[0].rdataToString();
-            }
-//            InetAddress inetAddress;
-//            InetAddress addr = InetAddress.getByName(hostIp);
-//            String host = addr.getHostName();
-//            //System.out.println(host);
-//            return host;
-	}catch(UnknownHostException ste){return hostIp;}
-	
-    }
+        Record[] answers = response.getSectionArray(Section.ANSWER);
+        if (answers.length == 0) {
+            return hostIp;
+        } else {
+            return answers[0].rdataToString();
+        }
+    }catch(SocketTimeoutException ste){}
+    return hostIp;
 }
+
+}
+

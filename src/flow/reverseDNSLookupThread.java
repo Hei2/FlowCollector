@@ -14,7 +14,7 @@ import java.util.concurrent.Callable;
  *
  * @author gxia
  */
-public class reverseDNSLookupThread implements Callable<String> {
+public class reverseDNSLookupThread implements Callable<String[]> {
     private String hostIp;
    
     reverseDNSLookupThread(String ip){
@@ -22,7 +22,10 @@ public class reverseDNSLookupThread implements Callable<String> {
     }
 
     @Override
-    public String call() throws Exception {
-        return DNS.getHostName(hostIp);
+    public String[] call() throws Exception {
+        String[] Host = new String[2];
+        Host[0] = hostIp;
+        Host[1] = DNS.getHostName(hostIp);
+        return Host;
     }
 }
