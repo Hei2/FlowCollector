@@ -14,6 +14,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 //http://netflow.caligare.com/netflow_v5.htm
 
@@ -24,10 +25,14 @@ import java.sql.Statement;
 public class PacketV5 extends Thread
 {
     DatagramPacket receivedPacket;
-            
+    byte[] receiveDataArray;
+      
     public PacketV5(DatagramPacket received)
     {
         receivedPacket = received;
+        //make a memory copy of buf in recievedPacket to avoid buf flush by NetFlowCollector thread
+        //Use getLength instead of buf length to save some space
+        receiveDataArray = Arrays.copyOf(receivedPacket.getData(), receivedPacket.getLength());
     }
     
     @Override
@@ -35,20 +40,20 @@ public class PacketV5 extends Thread
     {
         //Do we need to recreate the DatagramPacket just to be sure this
         //packet is not the same object used by other threads?
-        SavePacket(receivedPacket);
+        SavePacket(receiveDataArray);
     }
     
     /*
      * Grabs all of the packet information and stores it in the database.
      */
-    private void SavePacket(DatagramPacket receivedPacket)
+    private void SavePacket(byte[] receiveDataArray)
     {
         //Offset of 2 since version is being skipped.
-        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receivedPacket.getData(), 2, receivedPacket.getLength());
+        try (ByteArrayInputStream byteIn = new ByteArrayInputStream(receiveDataArray, 2, receivedPacket.getLength()-2);
                 DataInputStream in = new DataInputStream(byteIn);)
         {
             Class.forName("com.mysql.jdbc.Driver");
-            
+
             try (Connection conn = DriverManager.getConnection("jdbc:mysql://" + DatabaseProperties.getDatabase(), DatabaseProperties.getUser(), DatabaseProperties.getPassword());
                 Statement stmt = conn.createStatement();)
             {

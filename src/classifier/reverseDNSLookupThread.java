@@ -4,9 +4,9 @@
  * and open the template in the editor.
  */
 
-package flow;
+package classifier;
 
-import static flow.DNS.*;
+import static classifier.DNS.*;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 

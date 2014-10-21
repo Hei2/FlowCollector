@@ -1,7 +1,9 @@
 package flow;
 
+import classifier.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
@@ -54,23 +56,22 @@ public class FlowCollector
         } catch (UninitializedException ex) {
             ex.printStackTrace();
         }
+        
         //String[] argst= {"-s","6343"};
         //args = argst;
         try{ 
+            new DNS();
             //for test only
             TimeStringGen test = new TimeStringGen();        
             String startTimeStr =new String(TimeStringGen.getTimeStr());
-            //String startSecsStr =new String(TimeStringGen.getSecsStr());
-            //String startSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-56000)); 
-            //String endSecsStr =new String(String.valueOf((System.currentTimeMillis() / 1000)-36000)); 
-            String startSecsStr =new String(String.valueOf(1406268798)); 
-            String endSecsStr =new String(String.valueOf(1406289878)); 
+            String startSecsStr =new String(String.valueOf(1412105400)); //1410970800  1406268798
+            String endSecsStr =new String(String.valueOf(1412108100)); //1410984000   1406289878
             //next DNS lookup time start point
             TimeStringGen.setTimeStr();
-            TimeStringGen.setSecsStr();
+            TimeStringGen.setSecsStr();            
 
             DNS.performDNSLookup4NetFlow(startSecsStr,endSecsStr);
-            Classifier.cluster(startSecsStr,endSecsStr);
+            Classifier.P2PTrafficIdentify(startSecsStr,endSecsStr);           
             //end of test
                         
             int sflow_port =  -1;
@@ -125,9 +126,7 @@ public class FlowCollector
             //Acquire datetime string, pass it to SQL query to filter newly added ip entries
             TimeStringGen.setTimeStr();
             
-            //Use timer instead of while-loop to trigger DNS lookup
-
-            
+            //Use timer instead of while-loop to trigger DNS lookup periodically            
             Timer timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask(){
                 @Override
@@ -140,9 +139,16 @@ public class FlowCollector
                         TimeStringGen.setTimeStr();
                         TimeStringGen.setSecsStr();
                         //perform DNS lookup for records between startTimeStr and current time
-                        DNS.performDNSLookup(startTimeStr,TimeStringGen.getTimeStr());
-                        //DNS.performDNSLookup("2014-07-10 12:03:24");
-                        Classifier.cluster(startSecsStr,TimeStringGen.getSecsStr());
+                        if(false == DNS.performDNSLookup4NetFlow(startTimeStr,TimeStringGen.getTimeStr()))
+                        {   
+                            System.out.println("DNSLookup Error, system quit." );
+                            return;
+                        }
+                        if(false == Classifier.P2PTrafficIdentify(startSecsStr,TimeStringGen.getSecsStr()))
+                        {   
+                            System.out.println("Classifier Error, system quit." );
+                            return;
+                        }
                     }catch(Exception e){
                         e.printStackTrace();
                     }

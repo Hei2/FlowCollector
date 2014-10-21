@@ -28,9 +28,10 @@ package birchtree;
 
 import java.util.*;
 import java.io.*;
-
-
 import net.sourceforge.sizeof.*;
+//to utilize sizeof function, start application with the following JVM parameter:
+// -javaagent:/path_to/sizeOf.jar
+
 
 /**
  * This is an implementation of the BIRCH clustering algorithm described in:
@@ -415,7 +416,7 @@ public class CFTree {
 		
 		long memSize = 0;
 		try {
-			memSize = SizeOf.iterativeSizeOf(t);
+			memSize = SizeOf.deepSizeOf(t);
 		}
 		catch(Exception e) {
 			System.err.println("#################### ERROR WHEN COMPUTING MEMORY SIZE: " + e);
@@ -530,6 +531,25 @@ public class CFTree {
 		}
 		
 		return membersList;
+	}
+        
+        public int getP2PClusterNum(int Thres) {
+		int num = 0;
+		
+		CFNode l = leafListStart.getNextLeaf(); // the first leaf is dummy!
+		while(l!=null) {
+                    if(!l.isDummy()) {
+                        // System.out.println(l);
+                        for(CFEntry e : l.getEntries()) {
+                            if(e.getBGPprefixnum() > Thres) { //number of BGP > thres
+                                num++;
+                            }  
+                        }
+                    }
+                    l = l.getNextLeaf();
+		}
+		
+		return num;
 	}
 
 	/**

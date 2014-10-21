@@ -1,6 +1,6 @@
 package flow;
 
-import flow.UninitializedException;
+import classifier.UninitializedException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.Connection;

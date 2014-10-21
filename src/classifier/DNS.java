@@ -1,5 +1,6 @@
-package flow;
+package classifier;
 
+import flow.DatabaseProperties;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
@@ -17,10 +18,95 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.xbill.DNS.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 //import static netflow.Functions.getHostName;
 
 public class DNS{
+    private static SecondLevelDomain sld;
+    public DNS(){
+        sld = new SecondLevelDomain();
+    }
+    /**
+     *  nested class
+     * @author http://architects.dzone.com/articles/extract-second-and-top-level
+     */
+    public static class SecondLevelDomain {
+      private StringBuilder sb = new StringBuilder();
+      private Pattern pattern;
 
+      public SecondLevelDomain() {
+        try {
+          ArrayList<String> terms = new ArrayList<String>();
+
+          BufferedReader br = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream("res/effective_tld_names.dat")));
+          String s = null;
+          while ((s = br.readLine()) != null) {
+            s = s.trim();
+            if (s.length() == 0 || s.startsWith("//") || s.startsWith("!")) continue;
+            terms.add(s);
+          }
+          Collections.sort(terms, new StringLengthComparator());
+          for(String t: terms) add(t);
+          compile();
+          br.close();
+        } catch (IOException e) {
+          throw new IllegalStateException(e);
+        }
+      }
+
+      protected void add(String s) {
+        s = s.replace(".", "\\.");
+        s = "\\." + s;
+        if (s.startsWith("*")) {
+          s = s.replace("*", ".+");
+          sb.append(s).append("|");
+        } else {
+          sb.append(s).append("|");
+        }
+      }
+
+      public void compile() {
+        if (sb.length() > 0) sb.deleteCharAt(sb.length() - 1);
+        sb.insert(0, "[^.]+?(");
+        sb.append(")$");
+        pattern = Pattern.compile(sb.toString());
+        sb = null;
+      }
+
+      public String extract2LD(String host) {
+        Matcher m = pattern.matcher(host);
+        if (m.find()) {
+          return m.group(0);
+        }
+        return null;
+      }
+
+      public String extractTLD(String host) {
+        Matcher m = pattern.matcher(host);
+        if (m.find()) {
+          return m.group(1);
+        }
+        return null;
+      }
+
+      public static class StringLengthComparator implements Comparator<String> {
+        public int compare(String s1, String s2) {
+          if (s1.length() > s2.length()) return -1;
+          if (s1.length() < s2.length()) return 1;
+          return 0;
+        }
+      }
+    }    
+    
+    
     public static boolean performDNSLookup(String StartTimeStr,String EndTimeStr) {
         try {
             System.out.println("Beginning IP collection");
@@ -112,6 +198,7 @@ public class DNS{
     //DNS Lookup method for Netflow
     public static boolean performDNSLookup4NetFlow(String StartSecsStr,String EndSecsStr) {
         try {
+            //String slddomain1 = sld.extract2LD("ec2-107-20-193-65.compute-1.amazonaws.com");
             createDNSTableNetflow();
             //Load the driver.
             Class.forName("com.mysql.jdbc.Driver");
@@ -126,20 +213,19 @@ public class DNS{
 	    
             //Retrieve the IP addresses in the Flows table.
 	    String retrieve = "";
-            retrieve = "SELECT DISTINCT inet_ntoa(case when dstaddr<0 then abs(dstaddr)+0x80000000 else dstaddr end) as remotehost FROM PACKET_V5 "
+            retrieve = "SELECT DISTINCT inet_ntoa(dstaddr&0xffffffff) as remotehost FROM PACKET_V5 "
                     + "a left join PACKET_V5_HEADER b on a.header_id=b.id WHERE dstaddr not in (select ip from DNS_LOOKUP_Nf) and b.unix_secs between "+StartSecsStr+" and "+EndSecsStr;
             ResultSet rset = stmt.executeQuery(retrieve);
+            
             HashSet<String> ipAddresses = new HashSet<>();
-
             while (rset.next()) {
                 String ip = rset.getString(1);
                 if (!ip.isEmpty()) {
                     ipAddresses.add(ip);
                 }
             }
-
             System.out.println("IP collection complete\nBeginning DNS lookups");
-
+           
             //Perform a lookup on each IP.
             ExecutorService executorService = Executors.newFixedThreadPool(40);
             List<Callable<String[]>> tasklst = new ArrayList<Callable<String[]>>();
@@ -151,11 +237,13 @@ public class DNS{
                 try {
                     for (Future<String[]> hostname : HostLst) {                                           
                         if(!hostname.get()[0].equals(hostname.get()[1])){
-                            System.out.println(hostname.get()[1]);
+                            //extract domain
+                            String slddomain = sld.extract2LD(hostname.get()[1].substring(0,hostname.get()[1].length()-1));
+                            //insert ip with positive dns reverse lookup result to table.
+                            retrieve = "REPLACE INTO DNS_LOOKUP_Nf VALUES (cast(case when INET_ATON('" + hostname.get()[0] + "')>0x80000000 then INET_ATON('" + hostname.get()[0] + "')|0xffffffff00000000 else INET_ATON('" + hostname.get()[0] + "')&0xffffffff end as signed), '" + hostname.get()[1] + "','"+ slddomain+"'," + " NOW()" + ")";
+                            stmt.executeUpdate(retrieve);   
                         }
-                        retrieve = "REPLACE INTO DNS_LOOKUP_Nf VALUES (case when INET_ATON('" + hostname.get()[0] + "')>0x80000000 then (INET_ATON('" + hostname.get()[0] + "')-0x80000000)*-1 else INET_ATON('" + hostname.get()[0] + "') end, '" + hostname.get()[1] + "', " + " NOW()" + ")";
-                        stmt.executeUpdate(retrieve);                        
-                        //System.out.println(hostname.get()[0]);
+                        
                     }
                 } catch (ExecutionException ex) { ex.printStackTrace(); return false; }
             }
@@ -271,7 +359,7 @@ public class DNS{
         }
     }catch(SocketTimeoutException ste){}
     return hostIp;
-}
-
+    }
+    
 }
 

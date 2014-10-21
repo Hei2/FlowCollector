@@ -41,7 +41,7 @@ public class CFEntry {
 	private double[] sumX2 = null;
 	private CFNode child = null;
 	private ArrayList<Long> indexList = null;
-        private HashSet<Integer> dstaddrList = null;
+        private HashSet<Integer> dstaddrList = null; //count unique dst addresses in this entry
 	private int subclusterID = -1; // the unique id the describes a subcluster (valid only for leaf entries)
 	
 	public CFEntry() {
@@ -147,6 +147,7 @@ public class CFEntry {
 				this.indexList.addAll(e.indexList);
 			else if(this.indexList==null && e.indexList!=null)
 				this.indexList = (ArrayList<Long>)e.indexList.clone();
+                                //this.indexList = e.indexList;
 		}
                 
                 if(!this.hasChild()) { // we keep indexList only if we are at a leaf
@@ -154,6 +155,7 @@ public class CFEntry {
 				this.dstaddrList.addAll(e.dstaddrList);
 			else if(this.dstaddrList==null && e.dstaddrList!=null)
 				this.dstaddrList = (HashSet<Integer>)e.dstaddrList.clone();
+                                //this.dstaddrList = e.dstaddrList;
 		}
 	}
 	
