@@ -62,16 +62,16 @@ public class FlowCollector
         try{ 
             new DNS();
             //for test only
-            TimeStringGen test = new TimeStringGen();        
-            String startTimeStr =new String(TimeStringGen.getTimeStr());
-            String startSecsStr =new String(String.valueOf(1412105400)); //1410970800  1406268798
-            String endSecsStr =new String(String.valueOf(1412108100)); //1410984000   1406289878
-            //next DNS lookup time start point
-            TimeStringGen.setTimeStr();
-            TimeStringGen.setSecsStr();            
-
-            DNS.performDNSLookup4NetFlow(startSecsStr,endSecsStr);
-            Classifier.P2PTrafficIdentify(startSecsStr,endSecsStr);           
+//            TimeStringGen test = new TimeStringGen();        
+//            String startTimeStr =new String(TimeStringGen.getTimeStr());
+//            String startSecsStr =new String(String.valueOf(1412105400)); //1410970800  1406268798
+//            String endSecsStr =new String(String.valueOf(1412108100)); //1410984000   1406289878
+//            //next DNS lookup time start point
+//            TimeStringGen.setTimeStr();
+//            TimeStringGen.setSecsStr();            
+//
+//            DNS.performDNSLookup4NetFlow(startSecsStr,endSecsStr);
+//            Classifier.P2PTrafficIdentify(startSecsStr,endSecsStr);           
             //end of test
                         
             int sflow_port =  -1;
@@ -79,15 +79,11 @@ public class FlowCollector
             boolean display = false;
             NetFlowCollector nc;
             SFlowCollector sc;
-            
-            if(args[0].equals("-help")){
-                printHelp();
-                return;
-            }
-            
+                        
             // Take in arguments from command line
             for(int i = 0; i < args.length; i++){
                 switch(args[i]){
+                    case "-help": printHelp();  break;
                     case "-s": sflow_port = Integer.parseInt(args[++i]); break;
                     case "-n": netflow_port = Integer.parseInt(args[++i]); break;
                     case "-o": display = true; break;
@@ -106,7 +102,7 @@ public class FlowCollector
             }
             
             if(sflow_port == -1){
-                System.out.println("NetFlow Collector listening on port 6343 (default).");                
+                System.out.println("SFlow Collector listening on port 6343 (default).");                
                 sc = new SFlowCollector();
             } else{
                 System.out.println("SFlow Collector listening on port " + sflow_port + ".");                
@@ -127,44 +123,34 @@ public class FlowCollector
             TimeStringGen.setTimeStr();
             
             //Use timer instead of while-loop to trigger DNS lookup periodically            
-            Timer timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask(){
-                @Override
-                public void run() {
-                    try{
-                        //record start time point of DNS lookup and set start time of next DNS look up
-                        String startTimeStr =new String(TimeStringGen.getTimeStr());
-                        String startSecsStr =new String(TimeStringGen.getSecsStr());
-                        //next DNS lookup time start point
-                        TimeStringGen.setTimeStr();
-                        TimeStringGen.setSecsStr();
-                        //perform DNS lookup for records between startTimeStr and current time
-                        if(false == DNS.performDNSLookup4NetFlow(startTimeStr,TimeStringGen.getTimeStr()))
-                        {   
-                            System.out.println("DNSLookup Error, system quit." );
-                            return;
-                        }
-                        if(false == Classifier.P2PTrafficIdentify(startSecsStr,TimeStringGen.getSecsStr()))
-                        {   
-                            System.out.println("Classifier Error, system quit." );
-                            return;
-                        }
-                    }catch(Exception e){
-                        e.printStackTrace();
-                    }
-                }
-            }, 1000, 1000);
-            
-//            while(true){
-//                if(System.currentTimeMillis() - initialTime >= 3600000){ // DNS lookup every hour 3600000
+//            Timer timer = new Timer();
+//            timer.scheduleAtFixedRate(new TimerTask(){
+//                @Override
+//                public void run() {
 //                    try{
-//                        DNS.performDNSLookup(initialTimeStr);
+//                        //record start time point of DNS lookup and set start time of next DNS look up
+//                        String startTimeStr =new String(TimeStringGen.getTimeStr());
+//                        String startSecsStr =new String(TimeStringGen.getSecsStr());
+//                        //next DNS lookup time start point
+//                        TimeStringGen.setTimeStr();
+//                        TimeStringGen.setSecsStr();
+//                        //perform DNS lookup for records between startTimeStr and current time
+//                        if(false == DNS.performDNSLookup4NetFlow(startTimeStr,TimeStringGen.getTimeStr()))
+//                        {   
+//                            System.out.println("DNSLookup Error, system quit." );
+//                            return;
+//                        }
+//                        if(false == Classifier.P2PTrafficIdentify(startSecsStr,TimeStringGen.getSecsStr()))
+//                        {   
+//                            System.out.println("Classifier Error, system quit." );
+//                            return;
+//                        }
 //                    }catch(Exception e){
 //                        e.printStackTrace();
 //                    }
-//                    initialTime = System.currentTimeMillis(); // reset initial time
 //                }
-//              }
+//            }, 100000, 100000);
+            
         } catch (SQLException ex) {
             if (ex.getSQLState().equals("08S01")) {
                 System.err.println("Error: Failed to connect to database: " + DatabaseProperties.getDatabase());

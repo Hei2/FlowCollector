@@ -109,12 +109,13 @@ public class SFlowCollector extends Thread {
                         }
 
                         if (fsh != null) {
-                            // Create a FlowSamplePacket representation that stores only needed information.
-                            FlowSamplePacket fsp = new FlowSamplePacket();
-                            fsp.setSampleSeqNo(fsh.getSequenceNumber());
-                            fsp.setSamplePool(fsh.getSamplePool());
-                            fsp.setSource(((Long) fsh.getSourceIDType()).toString());
-
+                            
+                            SubAgent sa = agent.get(Long.toString(fsh.getSourceIDType()));
+                            if (sa == null) {
+                                sa = new SubAgent(Long.toString(fsh.getSourceIDType()), agent.getIpAddress());
+                                agent.add(sa);
+                            }
+                            
                             Vector<FlowRecordHeader> flowRecords = fsh.getFlowRecords();
 
                             for (FlowRecordHeader frh : flowRecords) {
@@ -122,33 +123,35 @@ public class SFlowCollector extends Thread {
                                 // We are only parsing 1, the Raw Packet Header 
                                 // Other counter data may be useful in the future
                                 if (frh.getFlowDataFormat() == frh.RAW_PACKET_HEADER) {
+                                    // Create a FlowSamplePacket representation that stores only needed information.
+                                    FlowSamplePacket fsp = new FlowSamplePacket();
+                                    fsp.setSampleSeqNo(fsh.getSequenceNumber());
+                                    fsp.setSamplePool(fsh.getSamplePool());
+                                    fsp.setSource(((Long) fsh.getSourceIDType()).toString());
+                            
                                     RawPacketHeader rph = frh.getRawPacketHeader();
                                     fsp.setPacketSize(rph.getFrameLength());
 
                                     IPHeader iph = rph.getMacHeader().getIph();
-                                    fsp.setDestIP(iph.getDestAddress());
-                                    fsp.setSrcIP(iph.getSrcAddress());
-                                    fsp.setProtocol(iph.getProtocol());
+                                    if(iph != null){
+                                        fsp.setDestIP(iph.getDestAddress());
+                                        fsp.setSrcIP(iph.getSrcAddress());
+                                        fsp.setProtocol(iph.getProtocol());
 
-                                    TransportHeader tph = iph.getTph();
-                                    fsp.setSourcePort(tph.getSrcPort());
-                                    fsp.setDestPort(tph.getDestPort());
+                                        TransportHeader tph = iph.getTph();
+                                        fsp.setSourcePort(tph.getSrcPort());
+                                        fsp.setDestPort(tph.getDestPort());
+                                        sa.addPacket(fsp);
+                                    }                                    
                                 }
-                            }
-
-                            SubAgent sa = agent.get(Long.toString(fsh.getSourceIDType()));
-                            if (sa == null) {
-                                sa = new SubAgent(Long.toString(fsh.getSourceIDType()), agent.getIpAddress());
-                                agent.add(sa);
-                            }
-                            sa.addPacket(fsp);
+                            }                            
                         }
                     }
 
                     // Currently hard-coded to insert / print statistics every 60 seconds
                     if (System.currentTimeMillis() - initialTime >= 60000) {
                         for (Agent a : agents) {
-                            for (SubAgent sa : agent.getSubAgents()) {
+                            for (SubAgent sa : a.getSubAgents()) {
                                 try {
                                     sa.analyze();
                                     sa.insertFlows();
