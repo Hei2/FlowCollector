@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jsflow.SFlowCollector;
 import netflow.*;
+import SNMPmgnt.*;
 //http://stackoverflow.com/questions/5160414/read-netflow-rflow-dd-wrt-packet-content
 //http://stackoverflow.com/questions/10556829/sending-and-receiving-udp-packets-using-java
 //http://dev.mysql.com/doc/refman/5.0/es/connector-j-reference-configuration-properties.html
@@ -61,17 +62,26 @@ public class FlowCollector
         //args = argst;
         try{ 
             new DNS();
-            //for test only
+            //for test only           
+//            DiskSpaceManager.spaceChecker();
+//            SNMPPoller sPoller = new SNMPPoller("localhost","LAB","./MIBs/HOST-RESOURCES-MIB",".1.3.6.1.2.1.25.1.1.0");
+//            sPoller.start();
+//            
+//            PollTable ptable = new PollTable("localhost","LAB","./MIBs/HOST-RESOURCES-MIB","hrProcessorTable");
+//            ptable.setRetries(100);
+//            ptable.setPollInterval(10);
+//            ptable.start();
+//            
 //            TimeStringGen test = new TimeStringGen();        
 //            String startTimeStr =new String(TimeStringGen.getTimeStr());
-//            String startSecsStr =new String(String.valueOf(1412105400)); //1410970800  1406268798
-//            String endSecsStr =new String(String.valueOf(1412108100)); //1410984000   1406289878
+//            String startSecsStr =new String(String.valueOf(1406214703)); //1410970800  1406268798
+//            String endSecsStr =new String(String.valueOf(1406214823)); //1410984000   1406289878
 //            //next DNS lookup time start point
 //            TimeStringGen.setTimeStr();
 //            TimeStringGen.setSecsStr();            
-//
+//            //DNS.performDNSLookup4sFlow("2015-06-16 16:19:54","2015-06-16 17:19:54");
 //            DNS.performDNSLookup4NetFlow(startSecsStr,endSecsStr);
-//            Classifier.P2PTrafficIdentify(startSecsStr,endSecsStr);           
+//            Classifier.P2PIdentify(startSecsStr,endSecsStr);           
             //end of test
                         
             int sflow_port =  -1;
@@ -123,33 +133,31 @@ public class FlowCollector
             TimeStringGen.setTimeStr();
             
             //Use timer instead of while-loop to trigger DNS lookup periodically            
-//            Timer timer = new Timer();
-//            timer.scheduleAtFixedRate(new TimerTask(){
-//                @Override
-//                public void run() {
-//                    try{
-//                        //record start time point of DNS lookup and set start time of next DNS look up
-//                        String startTimeStr =new String(TimeStringGen.getTimeStr());
-//                        String startSecsStr =new String(TimeStringGen.getSecsStr());
-//                        //next DNS lookup time start point
-//                        TimeStringGen.setTimeStr();
-//                        TimeStringGen.setSecsStr();
-//                        //perform DNS lookup for records between startTimeStr and current time
-//                        if(false == DNS.performDNSLookup4NetFlow(startTimeStr,TimeStringGen.getTimeStr()))
-//                        {   
-//                            System.out.println("DNSLookup Error, system quit." );
-//                            return;
-//                        }
-//                        if(false == Classifier.P2PTrafficIdentify(startSecsStr,TimeStringGen.getSecsStr()))
-//                        {   
-//                            System.out.println("Classifier Error, system quit." );
-//                            return;
-//                        }
-//                    }catch(Exception e){
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }, 100000, 100000);
+            Timer timer = new Timer();
+            timer.scheduleAtFixedRate(new TimerTask(){
+                @Override
+                public void run() {
+                    try{
+                        //acquire previous time punch 
+                        String startTimeStr =new String(TimeStringGen.getTimeStr());
+                        String startSecsStr =new String(TimeStringGen.getSecsStr());
+                        //punch
+                        TimeStringGen.setTimeStr();
+                        TimeStringGen.setSecsStr();
+                        
+                        //perform DNS lookup for Netflow records between startTimeStr and current time
+                        DNS.performDNSLookup4NetFlow(startTimeStr,TimeStringGen.getTimeStr());
+                        //perform DNS lookup for sFlow records between startTimeStr and current time
+                        DNS.performDNSLookup4sFlow(startTimeStr,TimeStringGen.getTimeStr());                        
+                        //perform P2P host identify
+                        Classifier.P2PIdentify(startSecsStr,TimeStringGen.getSecsStr());
+                        //space checker
+                        DiskSpaceManager.spaceChecker();
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }, 30*60*1000, 60*60*1000);
             
         } catch (SQLException ex) {
             if (ex.getSQLState().equals("08S01")) {

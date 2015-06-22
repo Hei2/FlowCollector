@@ -123,7 +123,7 @@ public class CFTree {
 		if(distFunction < D0_DIST || distFunction > D4_DIST)
 			distFunction = D0_DIST;
 			
-		root = new CFNode(maxNodeEntries,distThreshold,distFunction,applyMergingRefinement,true);
+		root = new CFNode(maxNodeEntries,distThreshold,distFunction,applyMergingRefinement,true);               
                 NumLeafEntries = new CFEntryCounter();
                 LeafEntriesLimit = 6000;
 		leafListStart = new CFNode(0,0,distFunction,applyMergingRefinement,true); // this is a dummy node that points to the fist leaf
@@ -208,7 +208,9 @@ public class CFTree {
             	instanceIndex++;		
 		if(automaticRebuild && (instanceIndex % periodicMemLimitCheck)==0) {
 			// rebuilds the tree if we reached or exceeded memory limits
-			rebuildIfAboveMemLimit();
+			//rebuildIfAboveMemLimit();
+                        //rebuilds the tree if tree is skewed largely
+                        //rebuildIfskewed();
 		}
                 
 		CFEntry e = new CFEntry(x,index,dstaddr);
@@ -232,8 +234,11 @@ public class CFTree {
 			splitRoot();
 			
 			if(automaticRebuild) {
+                            // no need to rebuild because LeafEntriesLimit will trigger rebuild if too many leaf entries created
 				// rebuilds the tree if we reached or exceeded memory limits
-				rebuildIfAboveMemLimit();
+				//rebuildIfAboveMemLimit();
+                                //rebuilds the tree if tree is skewed largely
+                                //rebuildIfskewed();
 			}
 		}
                 //rebuilt tree if entries in leaf node exceed certain threshold
@@ -279,6 +284,23 @@ public class CFTree {
 		
 		return false;
 	}
+        
+//        private boolean rebuildIfskewed() {
+//            int leafEntryNum = countLeafEntries();
+//            
+//		if(instanceIndex/leafEntryNum < 2) { //instance distributed too even i.e. less clustering, then increase threshold
+//
+//			double newThreshold = computeNewThreshold(leafListStart, root.getDistFunction(), root.getDistThreshold());
+//			// System.out.println("############## New Threshold = " + newThreshold);
+//			
+//			CFTree newTree = this.rebuildTree(root.getMaxNodeEntries(), newThreshold, root.getDistFunction(), root.applyMergingRefinement(), false);
+//			copyTree(newTree);
+//			
+//			return true;
+//		}
+//		
+//		return false;
+//	}
         
         private boolean rebuildIfLeafEntriesExceedLimit() {
 		if(NumLeafEntries.getCounter() > LeafEntriesLimit) {
@@ -416,6 +438,7 @@ public class CFTree {
 		
 		long memSize = 0;
 		try {
+                        // Need to turn on VMOption: -javaagent:SizeOf.jar
 			memSize = SizeOf.deepSizeOf(t);
 		}
 		catch(Exception e) {

@@ -11,8 +11,9 @@ package classifier;
  * @author gxia
  */
 public class TimeStringGen {
-    private static String startQueryTimeStr;
-    private static String startQuerySecsStr;
+    // two types of time string
+    private static String startQueryTimeStr; //"yyyy-MM-dd HH:mm:ss"
+    private static String startQuerySecsStr; // unix seconds
     public TimeStringGen() {
         java.util.Date dateObj = new java.util.Date();
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

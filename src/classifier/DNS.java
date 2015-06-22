@@ -106,7 +106,7 @@ public class DNS{
       }
     }    
     
-    
+    // depreciated method
     public static boolean performDNSLookup(String StartTimeStr,String EndTimeStr) {
         try {
             System.out.println("Beginning IP collection");
@@ -196,7 +196,7 @@ public class DNS{
     }
 
     //DNS Lookup method for Netflow
-    public static boolean performDNSLookup4NetFlow(String StartSecsStr,String EndSecsStr) {
+    public static void performDNSLookup4NetFlow(String StartSecsStr,String EndSecsStr) {
         try {
             //String slddomain1 = sld.extract2LD("ec2-107-20-193-65.compute-1.amazonaws.com");
             createDNSTableNetflow();
@@ -230,7 +230,7 @@ public class DNS{
             ExecutorService executorService = Executors.newFixedThreadPool(40);
             List<Callable<String[]>> tasklst = new ArrayList<Callable<String[]>>();
             for (String ip : ipAddresses) {
-                tasklst.add(new reverseDNSLookupThread(ip));
+                tasklst.add(new ReverseDNSLookupThread(ip));
             }            
             try {
                 List<Future<String[]>> HostLst= executorService.invokeAll(tasklst);
@@ -245,7 +245,7 @@ public class DNS{
                         }
                         
                     }
-                } catch (ExecutionException ex) { ex.printStackTrace(); return false; }
+                } catch (ExecutionException ex) { ex.printStackTrace(); }
             }
             catch(InterruptedException ex){
                 System.out.println("Threads pool interrupted");
@@ -253,7 +253,7 @@ public class DNS{
             }
             executorService.shutdown();
             System.out.println("DNS lookups complete");
-            return true;
+            
         } catch (SQLException ex) {
             if (ex.getSQLState().equals("08S01")) {
                 System.out.println("Error: Failed to connect to database with URL: " + DatabaseProperties.getDatabase());
@@ -265,8 +265,86 @@ public class DNS{
             System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
         } catch (ClassNotFoundException ex) {
             System.out.println(ex.getMessage());
-        } 
-        return false;
+        } catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+    
+    //DNS Lookup method for sFlow
+    public static void performDNSLookup4sFlow(String StartSecsStr,String EndSecsStr) {
+        try {
+            //String slddomain1 = sld.extract2LD("ec2-107-20-193-65.compute-1.amazonaws.com");
+            createDNSTablesFlow();
+            //Load the driver.
+            Class.forName("com.mysql.jdbc.Driver");
+            //Create a connection.
+            Connection conn = DriverManager.getConnection("jdbc:mysql://" + DatabaseProperties.getDatabase(), DatabaseProperties.getUser(), DatabaseProperties.getPassword());
+            //Create a statement object to use.
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT VERSION()");
+            rs.first();
+	    String [] sql_v = rs.getString(1).split("\\.",0);
+            double mysql_version = Integer.parseInt(sql_v[0]) + Integer.parseInt(sql_v[1])*0.1d;
+	    
+            //TODO: delete old DNS lookup
+            
+            //Retrieve the IP addresses in the Flows table.
+	    String retrieve = "";
+            retrieve = "SELECT INET6_NTOA(ipadd) from (SELECT DISTINCT(DestinationAddress) as ipadd FROM FLOWS "
+                    + "WHERE DestinationAddress not in (select ip from DNS_LOOKUP_sf) and DateTimeInitiated between "+ "'"+StartSecsStr+"' and '"+EndSecsStr+"') as t" ;
+            ResultSet rset = stmt.executeQuery(retrieve);
+            
+            HashSet<String> ipAddresses = new HashSet<>();
+            while (rset.next()) {
+                String ip = rset.getString(1);
+                if (!ip.isEmpty()) {
+                    ipAddresses.add(ip);
+                }
+            }
+            System.out.println("IP collection complete\nBeginning DNS lookups");
+           
+            //Perform a lookup on each IP.
+            ExecutorService executorService = Executors.newFixedThreadPool(40);
+            List<Callable<String[]>> tasklst = new ArrayList<Callable<String[]>>();
+            for (String ip : ipAddresses) {
+                tasklst.add(new ReverseDNSLookupThread(ip));
+            }            
+            try {
+                List<Future<String[]>> HostLst= executorService.invokeAll(tasklst);
+                try {
+                    for (Future<String[]> hostname : HostLst) {                                           
+                        if(!hostname.get()[0].equals(hostname.get()[1])){
+                            //extract domain
+                            String slddomain = sld.extract2LD(hostname.get()[1].substring(0,hostname.get()[1].length()-1));
+                            //insert ip with positive dns reverse lookup result to table.
+                            retrieve = "REPLACE INTO DNS_LOOKUP_sf VALUES (INET6_ATON('" + hostname.get()[0] + "'), '" + hostname.get()[1] + "','"+ slddomain+"'," + " NOW()" + ")";
+                            stmt.executeUpdate(retrieve);   
+                        }
+                        
+                    }
+                } catch (ExecutionException ex) { ex.printStackTrace(); }
+            }
+            catch(InterruptedException ex){
+                System.out.println("Threads pool interrupted");
+                executorService.shutdown();
+            }
+            executorService.shutdown();
+            System.out.println("DNS lookups complete");
+            
+        } catch (SQLException ex) {
+            if (ex.getSQLState().equals("08S01")) {
+                System.out.println("Error: Failed to connect to database with URL: " + DatabaseProperties.getDatabase());
+            } else {
+                System.out.println("An unhandled error occured with the database\nSQL State: " + ex.getSQLState().toString());
+                ex.printStackTrace();
+            }
+
+            System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
+        } catch (ClassNotFoundException ex) {
+            System.out.println(ex.getMessage());
+        } catch (Exception ex){
+            ex.printStackTrace();
+        }
     }
     
     public static boolean createDNSTable() {
@@ -304,7 +382,7 @@ public class DNS{
     }
     
     //Netflow use different data type for ip address in Mysql thus another table is created with signed int format ip address colomn
-    public static boolean createDNSTableNetflow() {
+    public static boolean createDNSTablesFlow() {
         try {
             //Load the driver.
             Class.forName("com.mysql.jdbc.Driver");
@@ -316,8 +394,9 @@ public class DNS{
             Statement stmt = conn.createStatement();
 
             //Create the table.
-            String create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP_Nf (ip int NOT NULL, "
+            String create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP_sf (ip VARBINARY(16) NOT NULL, "
                     + "hostname TEXT, "
+                    + "domain TEXT, "
                     + "timestamp DATETIME NOT NULL, "
                     + "PRIMARY KEY (ip))";
             stmt.executeUpdate(create);
@@ -337,7 +416,42 @@ public class DNS{
         }
         return true;
     }
+    
+        //Netflow use different data type for ip address in Mysql thus another table is created with signed int format ip address colomn
+    public static boolean createDNSTableNetflow() {
+        try {
+            //Load the driver.
+            Class.forName("com.mysql.jdbc.Driver");
 
+            //Create a connection.
+            Connection conn = DriverManager.getConnection("jdbc:mysql://" + DatabaseProperties.getDatabase(), DatabaseProperties.getUser(), DatabaseProperties.getPassword());
+
+            //Create a statement object to use.
+            Statement stmt = conn.createStatement();
+
+            //Create the table.
+            String create = "CREATE TABLE IF NOT EXISTS DNS_LOOKUP_Nf (ip int NOT NULL, "
+                    + "hostname TEXT, "
+                    + "domain TEXT, "
+                    + "timestamp DATETIME NOT NULL, "
+                    + "PRIMARY KEY (ip))";
+            stmt.executeUpdate(create);
+        } catch (SQLException ex) {
+            if (ex.getSQLState().equals("08S01")) {
+                System.out.println("Error: Failed to connect to database with URL: " + DatabaseProperties.getDatabase());
+            } else {
+                System.out.println("An unhandled error occured with the database\nSQL State: " + ex.getSQLState().toString()
+                        + "\nFailed to connect to database with URL: " + DatabaseProperties.getDatabase());
+            }
+
+            System.out.println("\nFailed to create the database tables.\nRestart the program.");
+            return false;
+        } catch (ClassNotFoundException ex) {
+            System.out.println(ex.getMessage());
+            return false;
+        }
+        return true;
+    }
 
     public static String getHostName(String hostIp) throws IOException {
     try{

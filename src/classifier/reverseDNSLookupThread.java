@@ -14,10 +14,10 @@ import java.util.concurrent.Callable;
  *
  * @author gxia
  */
-public class reverseDNSLookupThread implements Callable<String[]> {
+public class ReverseDNSLookupThread implements Callable<String[]> {
     private String hostIp;
    
-    reverseDNSLookupThread(String ip){
+    ReverseDNSLookupThread(String ip){
         hostIp = ip;
     }
 

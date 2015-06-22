@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.sourceforge.sizeof.SizeOf;
 
 public class Classifier {
     
@@ -39,9 +40,9 @@ public class Classifier {
                 System.out.println("birchTree cluster begin");
                 createP2PTable();            
                 //retrieve local host ip list
-                //HashSet<Integer> ipAddresses = RetrieveLocalhost(StartSecsStr,EndSecsStr); 
-                HashSet<Integer> ipAddresses = new HashSet<Integer>();
-                ipAddresses.add(-2038342695);
+                HashSet<Integer> ipAddresses = RetrieveLocalhost(StartSecsStr,EndSecsStr); 
+//                HashSet<Integer> ipAddresses = new HashSet<Integer>();
+//                ipAddresses.add(-2038342695);
                
                 //Perform clustering on every internal host.
                 String retrieve = "";
@@ -49,12 +50,11 @@ public class Classifier {
                 long id = 0;
                 int dstaddr = 0;
                 for (int ip : ipAddresses) {
-                    //retrieve flow with no dns reverse lookup results from database for this particular host 
-    //                retrieve = "SELECT a.id,dPkts,dOctets,dstaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "
-    //                        +"WHERE dstaddr not in (select ip from DNS_LOOKUP_Nf) and b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and srcaddr="+ip; 
-
-                    retrieve = "SELECT a.id,dPkts,dOctets,srcaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "
-                            +"WHERE srcaddr not in (select ip from DNS_LOOKUP_Nf) and b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and dstaddr="+ip; 
+                    //retrieve flows from database for this particular host 
+                    retrieve = "SELECT a.id,dPkts,dOctets,dstaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "
+                            +"WHERE b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and srcaddr="+ip; 
+//                    retrieve = "SELECT a.id,dPkts,dOctets,srcaddr FROM PACKET_V5 a left join PACKET_V5_HEADER b on a.header_id=b.id "
+//                            +"WHERE srcaddr not in (select ip from DNS_LOOKUP_Nf) and b.unix_secs between "+StartSecsStr+" and "+EndSecsStr+" and srcaddr="+ip; 
 
                     //only outbound ip flows are considered at first phase.
                     ResultSet rset1Host = stmt.executeQuery(retrieve);
@@ -66,10 +66,11 @@ public class Classifier {
                     boolean applyMergingRefinement = true;
 
                     CFTree birchTree = new CFTree(maxNodeEntries,distThreshold,distFunction,applyMergingRefinement);
-                    birchTree.setMemoryLimit(200*1024*1024); //200MB
-                    birchTree.setAutomaticRebuild(true);
-                    birchTree.setPeriodicMemLimitCheck(100000); //check memory every 100000 insertion.
-
+                    // no need to rebuild by MemoryLimit, because LeafEntriesLimit will trigger rebuild if too many leaf entries created
+                    //birchTree.setMemoryLimit(200*1024*1024); //200MB
+                    //birchTree.setAutomaticRebuild(true);
+                    //birchTree.setPeriodicMemLimitCheck(100000); //check memory every 100000 insertion.
+                   
                     while (rset1Host.next()) {
                         id = rset1Host.getLong(1);  //column id
                         x[0] = rset1Host.getInt(2); //column dPkts
@@ -103,7 +104,7 @@ public class Classifier {
                     System.out.println("An unhandled error occured with the database\nSQL State: " + ex.getSQLState().toString());
                     ex.printStackTrace();
                 }                
-                System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
+                System.out.println("\nFailed to perform the clustring.\nRestart the program.");
             }            
         } catch (ClassNotFoundException ex) {
                 Logger.getLogger(Classifier.class.getName()).log(Level.SEVERE, null, ex);
@@ -121,11 +122,15 @@ public static boolean flowFilter(int ip) {
     return true;
 }    
 
-public static boolean P2PTrafficIdentify(String StartSecsStr,String EndSecsStr) {   
+public static void P2PIdentify(String StartSecsStr,String EndSecsStr) {   
     //stitch outgoing and incoming traffic for the host
-    HashSet<Integer> potentialP2PHost = cluster(StartSecsStr,EndSecsStr);
-    return Fingermatch(StartSecsStr,EndSecsStr,potentialP2PHost);
-    //
+    try{
+        HashSet<Integer> potentialP2PHost = cluster(StartSecsStr,EndSecsStr);
+    } catch(Exception ex){
+        ex.printStackTrace();
+    }
+    //return Fingermatch(StartSecsStr,EndSecsStr,potentialP2PHost);
+    return;
 } 
 
 /**
@@ -181,7 +186,7 @@ public static boolean P2PTrafficIdentify(String StartSecsStr,String EndSecsStr) 
                     ex.printStackTrace();
                 }
 
-                System.out.println("\nFailed to perform the DNS lookups.\nRestart the program.");
+                System.out.println("\nFailed to perform the fingermatch.\nRestart the program.");
             }
             return false;
         } catch (ClassNotFoundException ex) {
